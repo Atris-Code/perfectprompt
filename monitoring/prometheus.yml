@@ -13,7 +13,7 @@ scrape_configs:
 
   - job_name: 'nexo-backend'
     static_configs:
-      - targets: ['host.docker.internal:8000']
+      - targets: ['nexo_backend_prod:8000']
     scrape_interval: 5s
     metrics_path: '/metrics'
 

@@ -18,6 +18,7 @@ services:
       - '--web.enable-lifecycle'
     networks:
       - monitoring
+      - nexo_network_prod
 
   grafana:
     image: grafana/grafana:latest
@@ -35,6 +36,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - monitoring
+      - nexo_network_prod
     depends_on:
       - prometheus
 
@@ -62,3 +64,6 @@ volumes:
 networks:
   monitoring:
     driver: bridge
+  nexo_network_prod:
+    external: true
+    name: perfectprompt_nexo_network_prod

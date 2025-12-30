@@ -616,7 +616,7 @@ Ejemplo de respuesta válida:
 
 export async function getConcilioAnalysis(optimalPoint: ExperimentResultPoint, config: ExperimentConfig): Promise<string> {
     const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Analyze this experiment result: Optimal point ${JSON.stringify(optimalPoint)} for config ${JSON.stringify(config)}. Provide a concise analysis.`;
+    const prompt = `Analiza este resultado experimental: Punto óptimo ${JSON.stringify(optimalPoint)} para la configuración ${JSON.stringify(config)}. Proporciona un análisis conciso en español.`;
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-pro',
         contents: prompt,

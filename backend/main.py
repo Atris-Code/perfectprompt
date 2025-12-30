@@ -117,16 +117,23 @@ def read_simulation_data(current_user: User = Depends(get_current_user)):
     }
 
 @app.post("/creative/generate-prompt", tags=["Creative Studio"])
-def generate_creative_prompt(current_user: User = Depends(get_current_user)):
+def generate_creative_prompt(
+    request: BridgeRequest,
+    current_user: User = Depends(get_current_user)
+):
     """
     Prompt Creator Route.
+    Receives the full context and user prompt, and generates a creative response via Gemini.
     """
     require_role(current_user, "Colaborador")
 
+    # Call the AI Service
+    ai_response = generate_nexo_response(request.context, request.prompt)
+
     return {
         "user": current_user.email,
-        "prompt": "Genera una imagen futurista de una planta de biomasa...",
-        "context_source": "Pyrolysis Hub Data"
+        "response": ai_response,
+        "context_source": "Pyrolysis Hub Data (Live)"
     }
 
 @app.post("/creative/receive-context", tags=["Creative Studio"])

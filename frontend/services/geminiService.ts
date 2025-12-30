@@ -1185,7 +1185,8 @@ export async function generateNexoResponse(
     }
 
     try {
-        const response = await fetch(`${BASE_URL}/nexo-bridge/analyze`, {
+        // Updated to match Phase 4 Backend Endpoint
+        const response = await fetch(`${BASE_URL}/creative/generate-prompt`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -4,7 +4,7 @@ import type { PyrolysisMaterial, SolidMaterial, LiquidMaterial, GaseousMaterial,
 import { ContentType } from '../../types';
 import ProductYieldChart from './ProductYieldChart';
 import { Accordion } from '../form/Accordion';
-import { generateMaterialVisual, estimateThermalConductivity, generateDensificationVisualPrompt } from '../../services/geminiService';
+import { generateMaterialVisual, estimateThermalConductivity, generateDensificationVisualPrompt, generateNexoResponse } from '../../services/geminiService';
 import { FormTextarea, FormSelect, FormInput } from '../form/FormControls';
 import MaterialComparison from './MaterialComparison';
 
@@ -437,10 +437,59 @@ export const PyrolysisHub: React.FC<PyrolysisHubProps> = ({ onSimulateMixture, o
     const [selectionList, setSelectionList] = useState<number[]>([]);
     const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
 
+    // Phase 5: Data Fusion State
+    const [isCreativeMode, setIsCreativeMode] = useState(false);
+    const [creativeChatHistory, setCreativeChatHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+    const [creativeInput, setCreativeInput] = useState('');
+    const [isCreativeLoading, setIsCreativeLoading] = useState(false);
+
     // State for Intelligent Search
     const [advancedPhase, setAdvancedPhase] = useState('');
     const [dynamicFilters, setDynamicFilters] = useState<{ field: string; operator: string; value: string }[]>([]);
     const [sort, setSort] = useState<{ field: string; direction: 'ASC' | 'DESC' }>({ field: 'nombre', direction: 'ASC' });
+
+    const handleCreativeSubmit = async () => {
+        if (!creativeInput.trim() || !selectedMaterial) return;
+
+        const userMessage = creativeInput;
+        setCreativeChatHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+        setCreativeInput('');
+        setIsCreativeLoading(true);
+
+        try {
+            // Construct Context Payload (Phase 4 Bridge)
+            const contextPayload = {
+                meta: {
+                    version: "1.0",
+                    timestamp: new Date().toISOString(),
+                    origin_system: "PyrolysisHub_Frontend"
+                },
+                project_identity: {
+                    project_name: `Análisis de ${selectedMaterial.nombre}`,
+                    user_role: "Colaborador"
+                },
+                technical_core: {
+                    material_data: selectedMaterial,
+                    // If we had simulation results, we would add them here
+                },
+                semantic_bridge: {
+                    primary_insight: `Material ${selectedMaterial.fase} de categoría ${selectedMaterial.categoria}.`,
+                    visual_cues: {
+                        dominant_color: selectedMaterial.fase === 'Sólido' ? 'Tierra/Marrón' : 'Fluido/Oscuro',
+                        process_state: selectedMaterial.fase
+                    }
+                }
+            };
+
+            const response = await generateNexoResponse(contextPayload, userMessage);
+            
+            setCreativeChatHistory(prev => [...prev, { role: 'assistant', content: response }]);
+        } catch (error) {
+            setCreativeChatHistory(prev => [...prev, { role: 'assistant', content: "Error al conectar con Nexo Bridge." }]);
+        } finally {
+            setIsCreativeLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (virtualMaterial) {
@@ -1177,7 +1226,88 @@ export const PyrolysisHub: React.FC<PyrolysisHubProps> = ({ onSimulateMixture, o
                 </div>
                 
                 <div className="lg:col-span-2 bg-white p-6 rounded-lg border border-gray-200 shadow-md">
-                    {selectedMaterial ? (
+                    {/* --- PHASE 5: DATA FUSION TOGGLE --- */}
+                    <div className="flex justify-end mb-4">
+                        <button
+                            onClick={() => setIsCreativeMode(!isCreativeMode)}
+                            className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
+                                isCreativeMode 
+                                ? 'bg-purple-600 text-white shadow-lg scale-105' 
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            }`}
+                        >
+                            {isCreativeMode ? '✨ Modo Creativo Activo' : '👁️ Activar Espacio Creativo'}
+                        </button>
+                    </div>
+
+                    {isCreativeMode ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[600px]">
+                            {/* LEFT PANEL: DATA CONTEXT */}
+                            <div className="overflow-y-auto border-r pr-4">
+                                <h4 className="text-lg font-bold text-gray-800 mb-4">Contexto Científico</h4>
+                                {selectedMaterial ? (
+                                    <div className="space-y-4 text-sm">
+                                        <div className="p-3 bg-blue-50 rounded-lg">
+                                            <p className="font-semibold">Material Base:</p>
+                                            <p>{selectedMaterial.nombre} ({selectedMaterial.fase})</p>
+                                        </div>
+                                        <DensificationPlantSimulator selectedMaterial={selectedMaterial} />
+                                        {renderPhaseSpecificDetails(selectedMaterial)}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500 italic">Selecciona un material para ver su contexto.</p>
+                                )}
+                            </div>
+
+                            {/* RIGHT PANEL: CREATIVE CHAT */}
+                            <div className="flex flex-col h-full">
+                                <h4 className="text-lg font-bold text-purple-800 mb-4">Nexo Creative Bridge</h4>
+                                <div className="flex-1 bg-gray-50 rounded-lg p-4 overflow-y-auto mb-4 space-y-3 border border-gray-200">
+                                    {creativeChatHistory.length === 0 && (
+                                        <p className="text-center text-gray-400 text-sm mt-10">
+                                            El puente está listo. Envía una solicitud para transformar los datos en narrativa o visuales.
+                                        </p>
+                                    )}
+                                    {creativeChatHistory.map((msg, idx) => (
+                                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-[80%] p-3 rounded-lg text-sm ${
+                                                msg.role === 'user' 
+                                                ? 'bg-blue-600 text-white rounded-br-none' 
+                                                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                                            }`}>
+                                                {msg.content}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isCreativeLoading && (
+                                        <div className="flex justify-start">
+                                            <div className="bg-gray-200 p-3 rounded-lg rounded-bl-none animate-pulse text-xs text-gray-500">
+                                                Nexo está analizando el contexto...
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={creativeInput}
+                                        onChange={(e) => setCreativeInput(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleCreativeSubmit()}
+                                        placeholder="Ej: 'Crea una metáfora visual sobre la eficiencia...'"
+                                        className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-sm"
+                                    />
+                                    <button
+                                        onClick={handleCreativeSubmit}
+                                        disabled={isCreativeLoading || !creativeInput.trim()}
+                                        className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+                                    >
+                                        Enviar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                    selectedMaterial ? (
                         <div className="space-y-6">
                              <DensificationPlantSimulator selectedMaterial={selectedMaterial} />
                             <div className="flex justify-between items-start mb-4">
@@ -1273,6 +1403,7 @@ export const PyrolysisHub: React.FC<PyrolysisHubProps> = ({ onSimulateMixture, o
                         <div className="flex items-center justify-center h-full text-gray-500">
                             <p>Selecciona un material de la lista para ver sus detalles.</p>
                         </div>
+                    )
                     )}
                 </div>
             </div>

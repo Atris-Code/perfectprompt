@@ -235,6 +235,7 @@ export const App: React.FC = () => {
   const [expertCommandContext, setExpertCommandContext] = useState<any | null>(null);
   const [cinematicAuditData, setCinematicAuditData] = useState<AutoSolution | null>(null);
   const [architecturalPreset, setArchitecturalPreset] = useState<any | null>(null);
+  const [initialLabMaterialIds, setInitialLabMaterialIds] = useState<number[] | null>(null);
 
   // Auth State
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -1509,10 +1510,10 @@ Descripción Metafórica: ${element.descripcion_metaforica || 'N/A'}
       case 'pro-layouts': return <ProLayoutGallery selectedLayout={selectedLayout} onSelectLayout={setSelectedLayout} allStyles={styles} />;
       case 'tasks': return <TaskManager tasks={tasks} onUpdateStatus={(id, status) => setTasks(p => p.map(t => t.id === id ? { ...t, status } : t))} onUpdateTask={handleUpdateTask} onDelete={handleDeleteTask} onLoad={handleLoadTask} onSaveTask={handleSaveTask} setView={setView} knowledgeSources={knowledgeSources} onLoadNarrative={handleLoadNarrative} setInitialHubSearch={() => { }} />;
       case 'pyrolysis-hub': return <PyrolysisHub setView={setView} onSimulateMixture={() => { }} onEditImage={() => { }} onCreateContentFromMaterial={() => { }} virtualMaterial={null} onVirtualMaterialConsumed={() => { }} onSaveTask={handleSaveTask} />;
-      case 'comparative-lab': return <ComparativeScenariosLab onSaveTask={handleSaveTask} onDataConsumed={() => { }} />;
+      case 'comparative-lab': return <ComparativeScenariosLab onSaveTask={handleSaveTask} onDataConsumed={() => setInitialLabMaterialIds(null)} initialMaterialIds={initialLabMaterialIds} />;
       case 'knowledge-base': return <KnowledgeBase sources={knowledgeSources} onAddSource={(s) => setKnowledgeSources(p => [...p, s])} onClearSources={() => setKnowledgeSources([])} onAddVirtualMaterial={() => { }} />;
-      case 'process-optimizer': return <ProcessOptimizer onSaveTask={handleSaveTask} challengePackage={challengePackage} apiKey={API_KEY} />;
-      case 'property-visualizer': return <PropertyVisualizer setView={setView} setTasks={setTasks} setInitialLabMaterialIds={() => { }} />;
+      case 'process-optimizer': return <ProcessOptimizer onSaveTask={handleSaveTask} challengePackage={challengePackage} apiKey={API_KEY} initialMaterialId={initialLabMaterialIds ? initialLabMaterialIds[0] : null} />;
+      case 'property-visualizer': return <PropertyVisualizer setView={setView} setTasks={setTasks} setInitialLabMaterialIds={setInitialLabMaterialIds} />;
       case 'energy-balance': return <PyrolysisSimulator onNavigateWithContext={(payload: any) => {
           const prompt = `Generar una narrativa para un proceso de pirólisis con los siguientes datos:
 Fuente: ${payload.source}

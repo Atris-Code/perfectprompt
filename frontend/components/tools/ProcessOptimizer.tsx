@@ -78,10 +78,11 @@ interface ProcessOptimizerProps {
     onSaveTask: (task: Task) => void;
     challengePackage: OptimizationChallengePackage | null;
     apiKey: string; // Gemini API key passed from parent
+    initialMaterialId?: number | null;
 }
 
-export const ProcessOptimizer: React.FC<ProcessOptimizerProps> = ({ onSaveTask, challengePackage, apiKey }) => {
-    const [materialId, setMaterialId] = useState<number>(PYROLYSIS_MATERIALS[0].id);
+export const ProcessOptimizer: React.FC<ProcessOptimizerProps> = ({ onSaveTask, challengePackage, apiKey, initialMaterialId }) => {
+    const [materialId, setMaterialId] = useState<number>(initialMaterialId || PYROLYSIS_MATERIALS[0].id);
     const [goal, setGoal] = useState<string>(OPTIMIZATION_GOALS[0]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');

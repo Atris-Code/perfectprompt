@@ -38,6 +38,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - VITE_NEXO_BACKEND_URL=http://188.166.19.103
+        - VITE_GEMINI_API_KEY=${GEMINI_API_KEY}
     container_name: nexo_frontend_prod
     restart: always
     ports:

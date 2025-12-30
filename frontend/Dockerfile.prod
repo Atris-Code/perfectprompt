@@ -10,7 +10,9 @@ COPY . .
 
 # Set the env var for the build
 ARG VITE_NEXO_BACKEND_URL
+ARG VITE_GEMINI_API_KEY
 ENV VITE_NEXO_BACKEND_URL=$VITE_NEXO_BACKEND_URL
+ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
 
 # Increase Node memory limit for build
 ENV NODE_OPTIONS="--max-old-space-size=3072"

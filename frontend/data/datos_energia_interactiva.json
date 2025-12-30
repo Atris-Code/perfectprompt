@@ -1,0 +1,176 @@
+{
+  "titulo_general": "Análisis de Datos de Energía y Transición Energética",
+  "fuente_general": "Presentación de Nicolás Di Sbroiavacca",
+  "datos_extraidos": [
+    {
+      "id": "diagrama_sankey_mundial",
+      "titulo": "Esquemática del balance energético Mundial",
+      "subtitulo": "13.000 Mtep de energía primaria y 9.000 Mtep de energía secundaria - Eficiencia del 69%",
+      "tipo_grafico": "Diagrama Sankey",
+      "unidades": "Mtep (Millones de Toneladas Equivalentes de Petróleo)",
+      "data": {
+        "entradas_primarias": {
+          "Coal": {"a_transformacion": 1166, "a_electricidad_calor": 1570, "a_industria": 3821},
+          "Natural_gas": {"a_transformacion": 67, "a_electricidad_calor": 2249, "a_industria": 60, "a_transporte": 17, "a_edificios": 65},
+          "Oil": {"a_transformacion": 275, "a_electricidad_calor": 1102, "a_industria": 719, "a_transporte": 494},
+          "Nuclear": {"a_electricidad_calor": 494},
+          "Renewables": {"a_electricidad_calor": 979}
+        },
+        "transformacion": {
+          "fuentes": ["Coal", "Natural_gas", "Oil"],
+          "salidas": {
+            "a_electricidad_calor": 818,
+            "a_industria": 1460,
+            "a_transporte": 2294,
+            "a_edificios": 1070,
+            "a_otros": 915,
+            "perdidas_uso_propio": 368,
+            "perdidas_conversion": 2656
+          }
+        },
+        "consumo_final": {
+          "industry": {"total": 1460, "de_electricidad_calor": 764, "de_transformacion": 197, "de_otros": 979},
+          "transport": {"total": 2294, "de_electricidad_calor": 24, "de_transformacion": 59, "de_otros": 59},
+          "buildings": {"total": 1070, "de_electricidad_calor": 862, "de_transformacion": 979, "de_otros": 979},
+          "other": {"total": 915, "de_electricidad_calor": 47, "de_transformacion": 8, "de_otros": 8}
+        }
+      }
+    },
+    {
+      "id": "rol_fosiles_consumo_mundial",
+      "titulo": "El rol relevante de los Fósiles dentro de la energía primaria",
+      "tipo_grafico": "Gráfico de Área Apilada (Consumo Mundial) y Gráfico de Líneas (Participación Global)",
+      "unidades": "Exajulios (EJ) y Porcentaje (%)",
+      "data_consumo_mundial": {
+        "observacion_clave": "El 81% del consumo de energía primaria es de origen fósil.",
+        "fuentes_energia": ["Oil", "Coal", "Natural_gas", "Hydroelectricity", "Nuclear_energy", "Renewables"],
+        "eje_y_max": 700,
+        "periodo": "2000-2022"
+      },
+      "data_participacion_global": {
+        "periodo": "2000-2022",
+        "fuentes_tendencias": {
+          "Oil": "Tendencia a la baja (de ~38% a ~30%)",
+          "Coal": "Tendencia estable/ligera baja (de ~25% a ~30%)",
+          "Natural_gas": "Tendencia estable/ligera alza (de ~20% a ~25%)",
+          "Hydroelectricity": "Tendencia estable (~6%)",
+          "Nuclear_energy": "Tendencia estable (~5%)",
+          "Renewables": "Tendencia al alza (de ~0% a ~7%)"
+        }
+      }
+    },
+    {
+      "id": "evolucion_energia_primaria_argentina",
+      "titulo": "Evolución de la Energía Primaria en Argentina (Oferta Interna)",
+      "tipo_grafico": "Gráfico de Barras Apiladas (100%)",
+      "unidades": "Porcentaje (%)",
+      "periodo": "1970-2011",
+      "data_fuentes": [
+        {"fuente": "Gas Natural", "tendencia": "Aumento significativo, especialmente a partir de los 80, dominando la matriz."},
+        {"fuente": "Petróleo", "tendencia": "Disminución relativa en la participación, aunque sigue siendo importante."},
+        {"fuente": "Hidráulica", "tendencia": "Participación relativamente estable."},
+        {"fuente": "Renovables*", "tendencia": "Participación muy baja y estable."},
+        {"fuente": "Carbón Mineral", "tendencia": "Participación muy baja y estable."},
+        {"fuente": "Nuclear", "tendencia": "Participación muy baja y estable."}
+      ]
+    },
+    {
+      "id": "argentina_situacion_actual_2024",
+      "titulo": "Argentina: situación actual (Oferta total Energía Primaria 2024)",
+      "tipo_grafico": "Gráfico de Anillo (Donut Chart)",
+      "unidades": "Mtep y Porcentaje (%)",
+      "oferta_total_2024": "82,93 Mtep",
+      "fuente": "2022 National Energy Balance",
+      "data_composicion": {
+        "carbon_based": "85%",
+        "Natural_Gas": "53%",
+        "Oil": "31,3%",
+        "Hydro": "3,2%",
+        "Biomass": "5,8%",
+        "Coal": "1,6%",
+        "Nuclear": "2,6%",
+        "Renewables": "2,3%"
+      }
+    },
+    {
+      "id": "evolucion_energia_acuerdo_paris_consumo",
+      "titulo": "Evolución de la energía primaria en el marco del Acuerdo de París",
+      "subtitulo": "Primary energy demand gradually decarbonizes, driven by rapid growth in renewable energy",
+      "tipo_grafico": "Gráfico de Líneas y Gráfico de Barras Apiladas",
+      "unidades": "EJ (Exajulios)",
+      "observaciones_clave": {
+        "participacion_fosiles_2022": "80% (Gas + Petróleo + Carbón)",
+        "participacion_gas_petroleo_2050": {
+          "ano_2022": "53%",
+          "trayectoria_actual": "48%",
+          "net_zero": "24%"
+        },
+        "participacion_h2_2050_net_zero": "12% de la energía primaria"
+      },
+      "data_trayectorias": {
+        "periodo": "2000-2050",
+        "trayectorias": ["Current_Trajectory", "Net_Zero"],
+        "composicion_2022": ["Renewables", "Nuclear_and_hydro", "Coal", "Natural_gas", "Oil"],
+        "composicion_trayectoria_actual": ["Renewables", "Nuclear_and_hydro", "Coal", "Natural_gas", "Oil"],
+        "composicion_net_zero": ["Renewables", "Nuclear_and_hydro", "Coal", "Natural_gas", "Oil"]
+      }
+    },
+    {
+      "id": "evolucion_energia_acuerdo_paris_emisiones",
+      "titulo": "Evolución de la energía primaria en el marco del Acuerdo de París (Emisiones)",
+      "tipo_grafico": "Gráfico de Líneas (Emisiones de Carbono)",
+      "unidades": "Gt de CO2e (Gigatoneladas de CO2 equivalente)",
+      "observaciones_clave": {
+        "participacion_fosiles_2022": "80% (Gas + Petróleo + Carbón)",
+        "participacion_gas_petroleo_2050": {
+          "ano_2022": "53%",
+          "trayectoria_actual": "48%",
+          "net_zero": "24%"
+        },
+        "participacion_h2_2050_net_zero": "12% de la energía primaria"
+      },
+      "data_emisiones": {
+        "periodo": "2000-2050",
+        "trayectorias": ["Current_Trajectory", "Net_Zero"],
+        "tendencia_net_zero": "Caída abrupta de emisiones a partir de 2020, llegando a casi cero en 2050.",
+        "tendencia_actual": "Emisiones se mantienen altas y caen lentamente después de 2030."
+      }
+    },
+    {
+      "id": "ventana_gas_natural_inversiones",
+      "titulo": "Ventana para el Gas Natural, en la Transición energética",
+      "tipo_contenido": "Texto e Imágenes",
+      "data_inversiones": {
+        "petrobras": {
+          "inversion_total": "U$S 102.000 millones",
+          "exploracion": "75% de la inversión total",
+          "energias_renovables": "U$S 11.000 millones"
+        },
+        "totalenergies_surinam": {
+          "bloque": "58",
+          "recursos_confirmados": "700 millones de barriles de petróleo",
+          "potencial_morgan_stanley": "6.500 millones de barriles",
+          "participantes": ["TotalEnergies", "Petronas", "ExxonMobil"]
+        }
+      }
+    },
+    {
+      "id": "crecimiento_produccion_petroleo",
+      "titulo": "Crecimiento de la producción de petróleo",
+      "tipo_grafico": "Gráfico de Barras Apiladas (Proyección)",
+      "unidades": "M B/D (Millones de Barriles por Día)",
+      "fuente": "Exxon Mobil, Bloomberg",
+      "periodo": "2020-2029",
+      "data_proyeccion": [
+        {"año": 2020, "produccion_total": "Baja"},
+        {"año": 2022, "produccion_total": "Aumento moderado"},
+        {"año": 2023, "produccion_total": "Aumento"},
+        {"año": 2025, "produccion_total": "Aumento significativo"},
+        {"año": 2026, "produccion_total": "Aumento"},
+        {"año": 2027, "produccion_total": "Aumento"},
+        {"año": 2029, "produccion_total": "Máximo proyectado"}
+      ],
+      "proyectos": ["Liza 1", "Liza 2", "Payara", "Yellowtail", "Uaru", "Hammerhead"]
+    }
+  ]
+}

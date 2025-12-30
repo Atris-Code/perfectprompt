@@ -1,0 +1,8 @@
+{
+  "name": "Perfect AI Prompt Creator",
+  "description": "An interactive web application that helps users build high-quality, structured prompts for any AI, using the Gemini API to refine and optimize the output.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

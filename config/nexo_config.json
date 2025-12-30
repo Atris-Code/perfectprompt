@@ -1,0 +1,110 @@
+{
+    "system_info": {
+        "app_name": "Nexo Sinérgico Core",
+        "version": "2.1.0",
+        "environment": "production_local",
+        "update_cycle": "realtime"
+    },
+    "modules": {
+        "economic_auditor": {
+            "enabled": true,
+            "parameters": {
+                "electricity_rate_kwh": 0.12,
+                "currency_symbol": "USD",
+                "industrial_hours_per_year": 7920,
+                "maintenance_downtime_percent": 0.05
+            },
+            "thresholds": {
+                "min_savings_for_alert": 1000.00,
+                "high_impact_savings": 10000.00
+            }
+        },
+        "academic_researcher": {
+            "enabled": true,
+            "parameters": {
+                "confidence_level": 0.95,
+                "alpha_significance": 0.05,
+                "test_type": "t_test_ind"
+            },
+            "thresholds": {
+                "min_sample_size": 3,
+                "variance_warning_limit": 15.0
+            }
+        },
+        "material_diagnostics": {
+            "enabled": true,
+            "description": "Reglas derivadas del PDF Z-2",
+            "critical_limits": {
+                "mesopore_volume_min": 0.02,
+                "coke_resistance_min": 60.0,
+                "stability_thermal_min": 90.0
+            }
+        },
+        "titan_debate": {
+            "enabled": true,
+            "agents": [
+                {
+                    "id": "titan_engineer",
+                    "focus": "viabilidad_operativa"
+                },
+                {
+                    "id": "titan_scientist",
+                    "focus": "rigor_teorico"
+                },
+                {
+                    "id": "titan_artist",
+                    "focus": "impacto_visual"
+                }
+            ]
+        }
+    },
+    "orchestration_rules": [
+        {
+            "id": "rule_economic_boom",
+            "trigger_condition": "annual_savings > modules.economic_auditor.thresholds.high_impact_savings",
+            "action": {
+                "target": "Prompt_Creator",
+                "copreset_template": "investor_pitch",
+                "priority": "HIGH",
+                "tone_override": "Persuasivo y Financiero"
+            }
+        },
+        {
+            "id": "rule_scientific_breakthrough",
+            "trigger_condition": "p_value < modules.academic_researcher.parameters.alpha_significance",
+            "action": {
+                "target": "Prompt_Creator",
+                "copreset_template": "academic_paper_abstract",
+                "priority": "MEDIUM",
+                "tone_override": "Formal y Objetivo"
+            }
+        },
+        {
+            "id": "rule_material_failure",
+            "trigger_condition": "mesopore_volume < modules.material_diagnostics.critical_limits.mesopore_volume_min",
+            "action": {
+                "target": "Prompt_Creator",
+                "copreset_template": "failure_analysis_visualization",
+                "priority": "CRITICAL",
+                "extra_context": "Advertencia: Bloqueo de poros inminente."
+            }
+        }
+    ],
+    "copreset_templates": {
+        "investor_pitch": {
+            "role": "Consultor Financiero Industrial",
+            "objective": "Visualizar el retorno de inversión masivo.",
+            "presentation": "Gráfico de crecimiento exponencial, estilo Fintech."
+        },
+        "academic_paper_abstract": {
+            "role": "Investigador Científico Senior",
+            "objective": "Redactar conclusión académica formal.",
+            "presentation": "Texto formato IEEE, referencias inline."
+        },
+        "failure_analysis_visualization": {
+            "role": "Experto en Nanotecnología",
+            "objective": "Mostrar la obstrucción física a nivel molecular.",
+            "presentation": "Render 3D sección transversal, contraste alto."
+        }
+    }
+}

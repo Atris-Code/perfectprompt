@@ -1,0 +1,21 @@
+{
+    "timestamp": "2023-10-27T14:30:00Z",
+    "source_module": "UTILITIES_PROCESS_ELECTRICITY_V1",
+    "project_id": null,
+    "data_context": {
+        "inputs": {
+            "demand_power_kw": 385,
+            "electricity_rate_eur_kwh": 0.06,
+            "annual_hours": 8000
+        },
+        "calculated_results": {
+            "hourly_cost_eur": 23.10,
+            "annual_cost_eur": 184800.00
+        }
+    },
+    "user_intent": {
+        "action": "GENERATE_EXECUTIVE_REPORT",
+        "target_audience": "CFO_INVESTORS",
+        "tone": "ANALYTICAL_OPTIMISTIC"
+    }
+}

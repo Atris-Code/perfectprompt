@@ -1,0 +1,143 @@
+[
+  {
+    "EntityID": "E1001",
+    "EntityName": "Global Energy Holdings Inc.",
+    "EntityType": "Corporation",
+    "HeadquartersCountry": "USA",
+    "WikiURL": "http://en.wikipedia.org/wiki/...",
+    "Subsidiaries": [
+      {
+        "EntityID": "E2005",
+        "EntityName": "Sudamérica Cementos S.A.",
+        "EntityType": "Corporation",
+        "HeadquartersCountry": "Colombia",
+        "WikiURL": "http://en.wikipedia.org/wiki/...",
+        "OwnershipPercentage": 85.0,
+        "Subsidiaries": [],
+        "Assets": [
+          {
+            "PlantID": "P3012",
+            "PlantName": "Planta de Cemento de Bogotá",
+            "Country": "Colombia",
+            "Status": "Operating",
+            "Capacity": 1.5,
+            "CapacityUnit": "million tonnes",
+            "OwnershipPercentage": 100.0,
+            "AssetType": "Cement and Concrete"
+          }
+        ]
+      }
+    ],
+    "Assets": []
+  },
+  {
+    "EntityID": "E4500",
+    "EntityName": "Vattenfall AB",
+    "EntityType": "State-Owned Enterprise",
+    "HeadquartersCountry": "Sweden",
+    "WikiURL": "https://en.wikipedia.org/wiki/Vattenfall",
+    "Subsidiaries": [],
+    "Assets": [
+      {
+        "AssetID": "B101",
+        "AssetName": "Uppsala CHP Plant",
+        "Country": "Sweden",
+        "Status": "Operating",
+        "Capacity": 220,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 100.0,
+        "AssetType": "Bioenergy Power"
+      },
+      {
+        "AssetID": "B102",
+        "AssetName": "Jordbro CHP Plant",
+        "Country": "Sweden",
+        "Status": "Operating",
+        "Capacity": 180,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 100.0,
+        "AssetType": "Bioenergy Power"
+      },
+      {
+        "AssetID": "B201",
+        "AssetName": "Diemen Bioenergy Plant",
+        "Country": "Netherlands",
+        "Status": "Operating",
+        "Capacity": 120,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 100.0,
+        "AssetType": "Bioenergy Power"
+      }
+    ]
+  },
+  {
+    "EntityID": "E5000",
+    "EntityName": "Fortum",
+    "EntityType": "Corporation",
+    "HeadquartersCountry": "Finland",
+    "WikiURL": "https://en.wikipedia.org/wiki/Fortum",
+    "Subsidiaries": [],
+    "Assets": [
+       {
+        "AssetID": "B301",
+        "AssetName": "Joensuu Bioenergy Plant",
+        "Country": "Finland",
+        "Status": "Operating",
+        "Capacity": 50,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 100.0,
+        "AssetType": "Bioenergy Power"
+      }
+    ]
+  },
+  {
+    "EntityID": "E6000",
+    "EntityName": "Statkraft",
+    "EntityType": "State-Owned Enterprise",
+    "HeadquartersCountry": "Norway",
+    "WikiURL": "https://en.wikipedia.org/wiki/Statkraft",
+    "Subsidiaries": [],
+    "Assets": [
+      {
+        "AssetID": "B401",
+        "AssetName": "Trondheim District Heating",
+        "Country": "Norway",
+        "Status": "Operating",
+        "Capacity": 120,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 100.0,
+        "AssetType": "Bioenergy Power"
+      }
+    ]
+  },
+  {
+    "EntityID": "E7000",
+    "EntityName": "Ørsted A/S",
+    "EntityType": "Corporation",
+    "HeadquartersCountry": "Denmark",
+    "WikiURL": "https://en.wikipedia.org/wiki/%C3%98rsted_(company)",
+    "Subsidiaries": [],
+    "Assets": [
+      {
+        "AssetID": "W101",
+        "AssetName": "Hornsea 1 Offshore Wind Farm",
+        "Country": "United Kingdom",
+        "Status": "Operating",
+        "Capacity": 1218,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 50.0,
+        "AssetType": "Offshore Wind Power"
+      },
+      {
+        "AssetID": "W102",
+        "AssetName": "Borssele 1 & 2 Offshore Wind Farm",
+        "Country": "Netherlands",
+        "Status": "Operating",
+        "Capacity": 752,
+        "CapacityUnit": "MW",
+        "OwnershipPercentage": 100.0,
+        "AssetType": "Offshore Wind Power"
+      }
+    ]
+  }
+]

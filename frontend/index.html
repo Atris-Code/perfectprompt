@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfect AI Prompt Creator</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-container {
+      height: 300px;
+      width: 100%;
+      border-radius: 0.5rem;
+      border: 1px solid #D1D5DB;
+      z-index: 0;
+    }
+    /* Estilos para EcoCasa Simulator */
+    .ecocasa-body { background-color: #f9fafb; color: #1f2937; }
+    .ecocasa-card { background-color: #ffffff; border: 1px solid #e5e7eb; }
+    .ecocasa-input-field { background-color: #ffffff; border: 1px solid #d1d5db; color: #111827; }
+    .ecocasa-output-box { background-color: #f9fafb; border-left-width: 4px; padding: 1rem; }
+    .ecocasa-rating-A { border-color: #166534; background-color: #16a34a; color: white; } /* Verde Oscuro */
+    .ecocasa-rating-B { border-color: #15803d; background-color: #22c55e; color: white; }
+    .ecocasa-rating-C { border-color: #4d7c0f; background-color: #84cc16; color: black; }
+    .ecocasa-rating-D { border-color: #ca8a04; background-color: #eab308; color: black; }
+    .ecocasa-rating-E { border-color: #d97706; background-color: #f97316; color: white; }
+    .ecocasa-rating-F { border-color: #dc2626; background-color: #ef4444; color: white; }
+    .ecocasa-rating-G { border-color: #991b1b; background-color: #b91c1c; color: white; } /* Rojo */
+    .ecocasa-improvement-card { background-color: #f3f4f6; }
+
+    /* Estilos para Detailed Project Input */
+    .detailed-project-container { background-color: #f9fafb; color: #1f2937; padding: 2rem; font-family: 'Inter', sans-serif; border-radius: 1rem; }
+    .detailed-project-container .input-field { background-color: #ffffff; border: 1px solid #d1d5db; color: #1f2937; }
+    .detailed-project-container details > summary { cursor: pointer; font-weight: bold; background-color: #f3f4f6; padding: 0.5rem 1rem; border-radius: 0.25rem; margin-bottom: 0.5rem; transition: background-color 0.2s; }
+    .detailed-project-container details > summary:hover { background-color: #e5e7eb; }
+    .detailed-project-container details[open] > summary { background-color: #e5e7eb; }
+    .detailed-project-container .section-content { padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.25rem; margin-bottom: 1rem; background-color: #ffffff;}
+    
+    /* Estilos para el Avatar de Marco */
+    .marco-avatar {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 64px;
+      height: 64px;
+      background-color: #0f172a;
+      border-radius: 50%;
+      border: 2px solid #22d3ee;
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.4), 0 0 5px rgba(34, 211, 238, 0.6) inset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease-in-out;
+      animation: pulse 4s infinite ease-in-out;
+    }
+
+    .marco-avatar:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 25px rgba(34, 211, 238, 0.6), 0 0 8px rgba(34, 211, 238, 0.8) inset;
+    }
+
+    .marco-avatar svg {
+      width: 60%;
+      height: 60%;
+      color: #67e8f9;
+    }
+
+    .marco-avatar .mouth {
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .marco-avatar.speaking {
+      animation: none;
+      border-color: #a5f3fc;
+      box-shadow: 0 0 25px rgba(165, 243, 252, 0.7), 0 0 10px rgba(165, 243, 252, 0.9) inset;
+      animation: speak-glow 1.5s infinite ease-in-out;
+    }
+
+    .marco-avatar.speaking .mouth {
+      animation: speak-mouth 0.8s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(34, 211, 238, 0.4), 0 0 5px rgba(34, 211, 238, 0.6) inset; }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(34, 211, 238, 0.5), 0 0 7px rgba(34, 211, 238, 0.7) inset; }
+    }
+
+    @keyframes speak-glow {
+      0%, 100% { transform: scale(1.05); opacity: 0.9; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    @keyframes speak-mouth {
+      0%, 100% { transform: scaleY(0.2); }
+      50% { transform: scaleY(1); }
+    }
+    /* Custom scrollbar for dark mode */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #1e293b; /* slate-800 */
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #475569; /* slate-600 */
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #64748b; /* slate-500 */
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.1.1",
+    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
+    "prop-types": "https://aistudiocdn.com/prop-types@^15.8.1",
+    "recharts/": "https://aistudiocdn.com/recharts@^3.3.0/"
+  }
+}
+</script>
+  <script src="https://unpkg.com/exifr/dist/full.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js"></script>
+  <script>
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+  </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div id="root"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

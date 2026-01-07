@@ -377,10 +377,32 @@ export const Creator: React.FC<CreatorProps> = ({
         }
     };
 
-    const handleCopyPrompt = () => {
-        navigator.clipboard.writeText(generatedPrompt);
-        setCopiedToClipboard(true);
-        setTimeout(() => setCopiedToClipboard(false), 2000);
+    const handleCopyPrompt = async () => {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(generatedPrompt);
+            } else {
+                // Fallback for non-secure contexts (HTTP)
+                const textArea = document.createElement("textarea");
+                textArea.value = generatedPrompt;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+                document.body.removeChild(textArea);
+            }
+            setCopiedToClipboard(true);
+            setTimeout(() => setCopiedToClipboard(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+        }
     };
 
     return (

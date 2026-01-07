@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { View, CharacterProfile, Assistant, SkillModule, Task } from '../types';
+import type { View, CharacterProfile, Assistant, SkillModule, Task, ChatMessage } from '../types';
 import { ContentType } from '../types';
 import { AssistantModal } from './CreateAssistantModal';
 import CreateSkillModuleModal from './CreateSkillModuleModal';
-import { executeSkillModule } from '../services/geminiService';
+import { executeSkillModule, createAssistant, getAssistants, updateAssistant, deleteAssistant, initializeAgentChat } from '../services/geminiService';
 import { FormInput } from './form/FormControls';
+import { ChatPanel } from './ChatPanel';
 
 interface TitanWorkspaceProps {
     titan: CharacterProfile;
@@ -107,6 +108,62 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
     const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
     const actionMenuRef = useRef<HTMLDivElement>(null);
 
+    // Assistant Chat State
+    const [activeAssistantChat, setActiveAssistantChat] = useState<Assistant | null>(null);
+    const [assistantChatHistory, setAssistantChatHistory] = useState<ChatMessage[]>([]);
+    const [isAssistantReplying, setIsAssistantReplying] = useState(false);
+    const assistantChatSessionRef = useRef<any>(null);
+
+    const handleStartAssistantChat = (assistant: Assistant) => {
+        setActiveAssistantChat(assistant);
+        
+        let systemPrompt = assistant.role_prompt;
+        if (assistant.knowledge_source_content) {
+            systemPrompt += `\n\nBASE DE CONOCIMIENTO:\n${assistant.knowledge_source_content}\n\nUsa esta base de conocimiento para responder preguntas.`;
+        }
+
+        assistantChatSessionRef.current = initializeAgentChat(systemPrompt);
+        setAssistantChatHistory([{
+            id: 'init',
+            role: 'model',
+            text: `Hola, soy ${assistant.name}. ¿En qué puedo ayudarte hoy?`
+        }]);
+    };
+
+    const handleAssistantSendMessage = async (message: string) => {
+        if (!assistantChatSessionRef.current) return;
+        
+        const userMsg: ChatMessage = { id: `user-${Date.now()}`, role: 'user', text: message };
+        setAssistantChatHistory(prev => [...prev, userMsg]);
+        setIsAssistantReplying(true);
+
+        try {
+            const result = await assistantChatSessionRef.current.sendMessage({ message });
+            const modelMsg: ChatMessage = { id: `model-${Date.now()}`, role: 'model', text: result.text };
+            setAssistantChatHistory(prev => [...prev, modelMsg]);
+        } catch (error) {
+            console.error("Chat error", error);
+             const errorMsg: ChatMessage = { id: `err-${Date.now()}`, role: 'model', text: "Lo siento, ocurrió un error al procesar tu mensaje." };
+            setAssistantChatHistory(prev => [...prev, errorMsg]);
+        } finally {
+            setIsAssistantReplying(false);
+        }
+    };
+
+    const assistantToProfile = (asst: Assistant): CharacterProfile => ({
+        claveName: asst.name,
+        archetype: "Asistente Personalizado",
+        physicalAppearance: "",
+        emotionalPersonality: "",
+        relationalState: "",
+        linkedIn: { name: asst.name, title: "Asistente IA", about: asst.role_prompt, skills: [] },
+        mantra: "",
+        imagePrompt: "",
+        system_prompt: asst.role_prompt,
+        audio: { description: "", voice: "", soundDesign: "" },
+        video: { description: "" }
+    });
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
@@ -118,6 +175,19 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [actionMenuRef]);
+
+    // Fetch assistants on mount or when titan changes
+    useEffect(() => {
+        const fetchAssistants = async () => {
+            try {
+                const assistants = await getAssistants(titan.claveName);
+                onUpdateTitan({ ...titan, assistants });
+            } catch (error) {
+                console.error("Error fetching assistants:", error);
+            }
+        };
+        fetchAssistants();
+    }, [titan.claveName]);
 
     const handleCopyText = (text: string, skillId: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -222,29 +292,34 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
         setActionMenuOpenId(null);
     };
 
-    const handleSaveAssistant = (newAssistantData: Omit<Assistant, 'id' | 'status'>) => {
-        const assistantWithId: Assistant = {
-            ...newAssistantData,
-            id: `asst-${Date.now()}`,
-            status: 'INACTIVE',
-        };
-        const updatedTitan = {
-            ...titan,
-            assistants: [...(titan.assistants || []), assistantWithId]
-        };
-        onUpdateTitan(updatedTitan);
-        setIsAssistantModalOpen(false);
+    const handleSaveAssistant = async (newAssistantData: Omit<Assistant, 'id' | 'created_at' | 'is_active'>) => {
+        try {
+            const createdAssistant = await createAssistant({
+                ...newAssistantData,
+                owner_titan_id: titan.claveName,
+                is_active: false
+            });
+            const updatedAssistants = [...(titan.assistants || []), createdAssistant];
+            onUpdateTitan({ ...titan, assistants: updatedAssistants });
+            setIsAssistantModalOpen(false);
+        } catch (error) {
+            console.error("Error creating assistant:", error);
+            alert("Error al crear el asistente.");
+        }
     };
 
-    const handleUpdateAssistant = (updatedAssistant: Assistant) => {
-        const updatedTitan = {
-            ...titan,
-            assistants: (titan.assistants || []).map(asst => 
-                asst.id === updatedAssistant.id ? updatedAssistant : asst
-            )
-        };
-        onUpdateTitan(updatedTitan);
-        setEditingAssistant(null);
+    const handleUpdateAssistant = async (updatedAssistant: Assistant) => {
+        try {
+            const result = await updateAssistant(updatedAssistant.id, updatedAssistant);
+            const updatedAssistants = (titan.assistants || []).map(asst => 
+                asst.id === result.id ? result : asst
+            );
+            onUpdateTitan({ ...titan, assistants: updatedAssistants });
+            setEditingAssistant(null);
+        } catch (error) {
+            console.error("Error updating assistant:", error);
+            alert("Error al actualizar el asistente.");
+        }
     };
     
     const handleSaveSkillModule = (skillData: Omit<SkillModule, 'id' | 'status'>) => {
@@ -282,19 +357,20 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
         }
     };
 
-    const handleToggleAssistantStatus = (assistantId: string) => {
-        const updatedTitan: CharacterProfile = {
-            ...titan,
-            assistants: (titan.assistants || []).map(asst => {
-                if (asst.id === assistantId) {
-                    // FIX: Explicitly type the new status to prevent type widening to `string`.
-                    const newStatus: 'ACTIVE' | 'INACTIVE' = asst.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-                    return { ...asst, status: newStatus };
-                }
-                return asst;
-            })
-        };
-        onUpdateTitan(updatedTitan);
+    const handleToggleAssistantStatus = async (assistantId: string) => {
+        const assistant = titan.assistants?.find(a => a.id === assistantId);
+        if (!assistant) return;
+
+        const newStatus = !assistant.is_active;
+        try {
+            const result = await updateAssistant(assistantId, { is_active: newStatus });
+            const updatedAssistants = (titan.assistants || []).map(asst => 
+                asst.id === result.id ? result : asst
+            );
+            onUpdateTitan({ ...titan, assistants: updatedAssistants });
+        } catch (error) {
+            console.error("Error toggling status:", error);
+        }
     };
 
     const handleToggleSkillStatus = (skillId: string) => {
@@ -350,13 +426,16 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
     };
 
 
-    const handleDeleteAssistant = (assistantId: string) => {
+    const handleDeleteAssistant = async (assistantId: string) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar este asistente?')) {
-            const updatedTitan = {
-                ...titan,
-                assistants: (titan.assistants || []).filter(asst => asst.id !== assistantId)
-            };
-            onUpdateTitan(updatedTitan);
+            try {
+                await deleteAssistant(assistantId);
+                const updatedAssistants = (titan.assistants || []).filter(asst => asst.id !== assistantId);
+                onUpdateTitan({ ...titan, assistants: updatedAssistants });
+            } catch (error) {
+                console.error("Error deleting assistant:", error);
+                alert("Error al eliminar el asistente.");
+            }
         }
     };
 
@@ -410,6 +489,35 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
                 />
             )}
 
+            {activeAssistantChat && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[80] p-4 animate-fade-in">
+                    <div className="bg-gray-900 w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden border border-gray-700">
+                        <div className="flex justify-between items-center p-4 bg-gray-800 border-b border-gray-700">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center font-bold text-white">
+                                    {activeAssistantChat.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Chat con {activeAssistantChat.name}</h3>
+                                    <p className="text-xs text-gray-400">Asistente Personalizado</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setActiveAssistantChat(null)} className="text-gray-400 hover:text-white transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="flex-grow overflow-hidden bg-gray-900">
+                             <ChatPanel
+                                agent={assistantToProfile(activeAssistantChat)}
+                                chatHistory={assistantChatHistory}
+                                onSendMessage={handleAssistantSendMessage}
+                                isAgentReplying={isAssistantReplying}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             <header className="mb-8">
                 <button onClick={onClose} className="text-cyan-400 hover:text-cyan-300 mb-4">&larr; Volver al Atrio</button>
@@ -433,17 +541,21 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
                                     <div key={asst.id} className="bg-gray-100 p-4 rounded-md space-y-3 border">
                                         <div>
                                             <p className="font-semibold text-lg text-gray-800">{asst.name}</p>
-                                            <p className="text-xs text-gray-500 mt-1"><strong>Rol:</strong> {asst.rolePrompt.substring(0, 100)}...</p>
+                                            <p className="text-xs text-gray-500 mt-1"><strong>Rol:</strong> {asst.role_prompt.substring(0, 100)}...</p>
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs font-bold text-gray-600">Estado:</span>
                                                  <label className="relative inline-flex items-center cursor-pointer">
-                                                    <input type="checkbox" checked={asst.status === 'ACTIVE'} onChange={() => handleToggleAssistantStatus(asst.id)} className="sr-only peer" />
+                                                    <input type="checkbox" checked={asst.is_active} onChange={() => handleToggleAssistantStatus(asst.id)} className="sr-only peer" />
                                                     <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                                                 </label>
                                             </div>
                                             <div className="flex gap-2">
+                                                <button onClick={() => handleStartAssistantChat(asst)} className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded flex items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                                                    Conversar
+                                                </button>
                                                 <button onClick={() => setEditingAssistant(asst)} className="text-xs font-semibold bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">Editar</button>
                                                 <button onClick={() => handleDeleteAssistant(asst.id)} className="text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 rounded">Eliminar</button>
                                             </div>

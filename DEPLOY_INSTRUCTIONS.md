@@ -123,6 +123,15 @@ Para actualizar la aplicación después de hacer cambios en el código:
 
 ## 7. Solución de Problemas
 
+### 7.1 Error "KeyError: 'ContainerConfig'"
+Si al desplegar recibes este error, es por una incompatibilidad en la versión antigua de `docker-compose`.
+**Solución:** Elimina los contenedores manualmente antes de desplegar:
+```bash
+docker rm -f nexo_backend_prod nexo_frontend_prod
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+### 7.2 Otros Problemas
 *   **Ver logs del backend**:
     ```bash
     docker logs -f nexo_backend_prod

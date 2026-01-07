@@ -2,42 +2,42 @@
 
 Basado en las especificaciones de la carpeta `human/Login`, este es el plan paso a paso para implementar la infraestructura de base de datos, seguridad y el puente de datos entre el área científica y creativa.
 
-## Fase 1: Fundamentos de Base de Datos y Esquema (PDF 1)
+## Fase 1: Fundamentos de Base de Datos y Esquema (PDF 1) - ✅ COMPLETADO
 
 **Objetivo:** Establecer la estructura de datos robusta con soporte RBAC (Role-Based Access Control) y seguridad JWS.
 
-1.  **Configuración del Entorno:**
+1.  **Configuración del Entorno:** ✅
     *   Instalar dependencias: `fastapi`, `uvicorn`, `sqlalchemy`, `passlib[bcrypt]`, `python-jose`.
     *   Configurar conexión a base de datos (SQLite para desarrollo, preparado para PostgreSQL).
 
-2.  **Implementación del Esquema SQL:**
+2.  **Implementación del Esquema SQL:** ✅
     *   Crear tabla `roles`: Definir roles (Admin, Operador, Viewer, Academico, Colaborador).
     *   Crear tabla `users`: Incluir campo crítico `token_version` (INT DEFAULT 1) para invalidación de tokens.
     *   Crear tabla `user_roles`: Relación Many-to-Many para usuarios con múltiples sombreros (ej. Académico + Colaborador).
     *   Crear tabla `refresh_tokens`: Para manejo de sesiones persistentes.
 
-3.  **Semilla de Datos (Seeding):**
+3.  **Semilla de Datos (Seeding):** ✅
     *   Script para insertar los roles definidos.
     *   Crear un usuario "Híbrido" de prueba (ej. `cientifico@nexo.com`) con roles de Académico y Colaborador.
 
-## Fase 2: Backend API y Autenticación Segura (PDF 2 y 3)
+## Fase 2: Backend API y Autenticación Segura (PDF 2 y 3) - 🚧 EN PROGRESO
 
 **Objetivo:** Implementar el servidor FastAPI con un sistema de login "Stateful JWT" que permita invalidación inmediata.
 
-1.  **Modelos ORM (SQLAlchemy):**
+1.  **Modelos ORM (SQLAlchemy):** ✅
     *   Mapear las tablas SQL a clases Python (`User`, `Role`).
 
-2.  **Utilidades de Seguridad:**
+2.  **Utilidades de Seguridad:** ✅
     *   Configurar `passlib` para hasheo de contraseñas (Bcrypt).
     *   Implementar generación de JWS incluyendo `ver` (versión del token) en el payload.
 
-3.  **Endpoint de Login (`/auth/login`):**
+3.  **Endpoint de Login (`/auth/login`):** ✅
     *   Validar credenciales.
     *   Verificar estado `is_active`.
     *   Generar token firmado con la `token_version` actual del usuario.
     *   Devolver token y lista de roles para el Frontend.
 
-4.  **El Guardián (Middleware de Dependencia):**
+4.  **El Guardián (Middleware de Dependencia):** ⏳ PENDIENTE
     *   Implementar `get_current_user`.
     *   Decodificar token y extraer `ver`.
     *   **Validación Crítica:** Comparar `ver` del token con `token_version` en la DB. Si difieren, rechazar (401).

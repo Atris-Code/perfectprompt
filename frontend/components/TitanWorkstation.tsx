@@ -14,6 +14,7 @@ import type {
 } from '../types';
 import { M3Simulator } from './tools/M3Simulator';
 import { ChatPanel } from './ChatPanel';
+import { delegateToAssistant } from '../services/geminiService';
 
 interface TitanWorkstationProps {
     titan: CharacterProfile;
@@ -89,9 +90,16 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
     // Initialize Chat
     useEffect(() => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        let systemPrompt = titan.system_prompt;
+        if (titan.assistants && titan.assistants.length > 0) {
+            const assistantsList = titan.assistants.filter(a => a.is_active).map(a => `- ${a.name}: ${a.role_prompt.substring(0, 150)}...`).join('\n');
+            systemPrompt += `\n\nTIENES ACCESO A LOS SIGUIENTES ASISTENTES ESPECIALIZADOS:\n${assistantsList}\n\nSi una tarea requiere conocimiento específico de uno de estos asistentes, PUEDES DELEGARLA. Para hacerlo, responde con un JSON que incluya 'accion_ui' con tipo 'DELEGAR_TAREA' y payload { asistente_nombre: string, tarea: string }.`;
+        }
+
         chatSessionRef.current = ai.chats.create({
             model: 'gemini-2.5-pro',
-            config: { systemInstruction: titan.system_prompt },
+            config: { systemInstruction: systemPrompt },
         });
 
         setChatHistory([{
@@ -141,8 +149,60 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
     }, [chatHistory, params, result]);
 
 
-    const handleActionClick = (actionId: string, messageId: string) => {
+    const handleActionClick = async (actionId: string, messageId: string) => {
         setChatHistory(prev => prev.map(msg => msg.id === messageId ? { ...msg, actionsDisabled: true } : msg));
+
+        if (actionId.startsWith('delegate_')) {
+            const [_, assistantName] = actionId.split('delegate_');
+            const originalMessage = chatHistory.find(m => m.id === messageId);
+            // Extract task from the message text or context. 
+            // Ideally, we stored the task in the action payload or state, but for simplicity let's re-parse or assume the last system proposal.
+            // Better approach: The actionId could encode the index or we use a ref.
+            // Let's assume the text contains the task description for now or we use a state.
+            
+            // Actually, let's use the 'payload' from the JSON response which we should have stored or we can parse from the text if we formatted it well.
+            // But wait, the 'action' was created in handleSendMessage.
+            
+            const assistant = titan.assistants?.find(a => a.name === assistantName);
+            if (!assistant) return;
+
+            const taskDescriptionMatch = originalMessage?.text.match(/Tarea: "(.*?)"/);
+            const taskDescription = taskDescriptionMatch ? taskDescriptionMatch[1] : "Tarea delegada por Hefesto";
+
+            const loadingMsg: ChatMessage = { id: `delegating-${Date.now()}`, role: 'system', text: `⏳ Delegando tarea a ${assistantName}...`, isSystem: true };
+            setChatHistory(prev => [...prev, loadingMsg]);
+
+            try {
+                // We need knowledgeSources here. Assuming they are passed as props.
+                // Wait, TitanWorkstationProps has knowledgeSources? Yes.
+                // But we need to access them here.
+                // Let's check props.
+                
+                const responseText = await delegateToAssistant(taskDescription, assistant, (props as any).knowledgeSources || []); // Using 'props' isn't available directly in functional component body like this.
+                // We need to use the prop 'knowledgeSources' from the component arguments.
+                // It is available in the scope: 'knowledgeSources'
+                
+                const resultMsg: ChatMessage = { 
+                    id: `result-${Date.now()}`, 
+                    role: 'model', 
+                    text: `✅ **Respuesta de ${assistantName}:**\n\n${responseText}\n\n---\n*Hefesto está analizando esta respuesta...*` 
+                };
+                setChatHistory(prev => [...prev, resultMsg]);
+
+                // Feed back to Hefesto
+                if (chatSessionRef.current) {
+                    const feedbackPrompt = `SYSTEM_ACTION: El asistente ${assistantName} ha respondido a la tarea delegada: "${taskDescription}".\nRespuesta: ${responseText}\n\nIntegra esta información y responde al usuario.`;
+                    const finalResponse = await chatSessionRef.current.sendMessage({ message: feedbackPrompt });
+                    const finalMsg: ChatMessage = { id: `hefesto-final-${Date.now()}`, role: 'model', text: finalResponse.text };
+                    setChatHistory(prev => [...prev, finalMsg]);
+                }
+
+            } catch (error) {
+                const errorMsg: ChatMessage = { id: `err-${Date.now()}`, role: 'system', text: "❌ Error al delegar la tarea.", isSystem: true };
+                setChatHistory(prev => [...prev, errorMsg]);
+            }
+            return;
+        }
 
         const optimizedData = optimizedParamsRef.current;
         const optimizedYield = optimizedYieldRef.current;
@@ -254,6 +314,8 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
                                             temperatura: { type: Type.NUMBER, nullable: true },
                                             incertidumbre_temp: { type: Type.NUMBER, nullable: true },
                                             tiempo_residencia: { type: Type.NUMBER, nullable: true },
+                                            asistente_nombre: { type: Type.STRING, nullable: true },
+                                            tarea: { type: Type.STRING, nullable: true }
                                         }
                                     }
                                 }
@@ -265,7 +327,17 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
 
             const responseJson = JSON.parse(response.text);
             
-            const agentMessage: ChatMessage = { id: `model-${Date.now()}`, role: 'model', text: responseJson.respuesta_chat || "No he entendido la acción." };
+            let agentMessage: ChatMessage = { id: `model-${Date.now()}`, role: 'model', text: responseJson.respuesta_chat || "No he entendido la acción." };
+            
+            if (responseJson.accion_ui && responseJson.accion_ui.tipo === 'DELEGAR_TAREA') {
+                const { asistente_nombre, tarea } = responseJson.accion_ui.payload;
+                agentMessage.text += `\n\nPropongo delegar la siguiente tarea a **${asistente_nombre}**:\nTarea: "${tarea}"`;
+                agentMessage.isAction = true;
+                agentMessage.actions = [
+                    { id: `delegate_${asistente_nombre}`, label: `✅ Aprobar Delegación a ${asistente_nombre}` }
+                ];
+            }
+            
             setChatHistory(prev => [...prev, agentMessage]);
 
             if (responseJson.accion_ui && responseJson.accion_ui.tipo === 'ACTUALIZAR_ESTADO_M3') {

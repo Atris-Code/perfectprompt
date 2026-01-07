@@ -47,15 +47,26 @@ class User(Base):
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"))
+    expires_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", back_populates="refresh_tokens")
+
+class Assistant(Base):
+    __tablename__ = "assistants"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
-    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"))
-    token_hash = Column(String, nullable=False)
-    expires_at = Column(DateTime(timezone=True), nullable=False)
-    revoked = Column(Boolean, default=False)
+    name = Column(String, nullable=False)
+    role_prompt = Column(Text, nullable=False)
+    knowledge_source_type = Column(String, nullable=False) # 'upload' or 'kb'
+    knowledge_source_content = Column(Text, nullable=True) # Extracted text content
+    owner_titan_id = Column(String, nullable=False) # e.g., "Dr. Pirolis"
+    is_active = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    user = relationship("User", back_populates="refresh_tokens")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

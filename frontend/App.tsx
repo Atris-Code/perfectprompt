@@ -1,77 +1,80 @@
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { ViewSelector } from './components/ViewSelector';
-import { Creator } from './components/Creator';
-import { StyleLibrary } from './components/StyleLibrary';
-import { ProStudio } from './components/ProStudio';
-import { Academia } from './components/Academia';
-import { ProfessionalEditor } from './components/ProfessionalEditor';
-import { InspirationGallery } from './components/InspirationGallery';
-import { ProLayoutGallery } from './components/ProLayoutGallery';
-import { TaskManager } from './components/TaskManager';
-import { TaskManager as COPRESETManager, type COPRESETPayload } from './services/taskManager';
-import { PyrolysisHub } from './components/tools/PyrolysisHub';
-import { ComparativeScenariosLab } from './components/tools/ComparativeScenariosLab';
-import { KnowledgeBase } from './components/KnowledgeBase';
-import { ProcessOptimizer } from './components/tools/ProcessOptimizer';
-import { PropertyVisualizer } from './components/tools/PropertyVisualizer';
-import PyrolysisSimulator from './components/PyrolysisSimulator';
-import { UserGuide } from './components/UserGuide';
-import { Game } from './components/Game';
-import { ExperimentDesigner } from './components/tools/ExperimentDesigner';
-import { TitansAtrium } from './components/tools/TitansAtrium';
-import { TitanWorkstation } from './components/tools/TitanWorkstation';
-import { TitanWorkspace } from './components/TitanWorkspace';
-import { HMIControlRoom } from './components/tools/HMIControlRoom';
-import { Hyperion9 } from './components/tools/Hyperion-9';
-import { AssayManager } from './components/tools/AssayManager';
-import { Aegis9 } from './components/tools/Aegis9';
-import { Phoenix } from './components/tools/Phoenix';
-import { Vulcano } from './components/tools/Vulcano';
-import { IAProStudio } from './components/tools/IAProStudio';
-import { NexoControlPanel } from './components/tools/NexoControlPanel';
-import { Chronos } from './components/tools/Chronos';
-import { AgriDeFi } from './components/tools/AgriDeFi';
-import { InnovationForge } from './components/tools/InnovationForge';
-import { KairosFinancialPanel } from './components/tools/KairosFinancialPanel';
-import { StrategicRiskSimulator } from './components/tools/StrategicRiskSimulator';
-import CogenerationSimulator from './components/tools/CogenerationSimulator';
-import FleetSimulator from './components/tools/FleetSimulator';
-import { CatalystLab } from './components/tools/CatalystLab';
-import { UtilitiesSimulator } from './components/tools/UtilitiesSimulator';
-import { GenerativeSimulator } from './components/tools/GenerativeSimulator';
-import { CircularFleet } from './components/tools/CircularFleet';
-import { GlobalViabilityAssessor } from './components/tools/GlobalViabilityAssessor';
-import { EcoCasaSimulator } from './components/tools/EcoCasaSimulator';
-import { DetailedProjectInput } from './components/tools/DetailedProjectInput';
-import { SustainableCerts } from './components/tools/SustainableCerts';
-import { CertificationComparator } from './components/tools/CertificationComparator';
-import { PodcastStudio } from './components/tools/PodcastStudio';
-import { NexoBridgeView } from './components/nexo/NexoBridgeView';
-import { TitansDebate } from './components/tools/TitansForum';
-import { DueDiligenceAnalyzer } from './components/tools/DueDiligenceAnalyzer';
-import { CallSimulator } from './components/tools/CallSimulator';
-import { CollaborationAgreement } from './components/tools/CollaborationAgreement';
-import { InteractiveFundamentalsLab } from './components/tools/InteractiveFundamentalsLab';
-import { ArchitecturalSynthesisDashboard } from './components/tools/ArchitecturalSynthesisDashboard';
-import { SystemStatusReport } from './components/SystemStatusReport';
-import { UserProfile } from './components/UserProfile';
-import { Manifesto } from './components/Manifesto';
-import { EcoHornetTwin } from './components/tools/EcoHornetTwin';
-import { ExpertCommandCenter } from './components/tools/ExpertCommandCenter';
-import { CinematicAuditPanel } from './components/tools/CinematicAuditPanel';
+import { LoadingSpinner } from './components/LoadingSpinner';
 import { Login } from './components/Login';
-import { AdminConsole } from './components/AdminConsole';
-
-import { useTranslations } from './contexts/LanguageContext';
-import AboutModal from './components/AboutModal';
 import { MarcoAvatar } from './components/MarcoAvatar';
-import { GaiaLab } from './components/tools/GaiaLab';
+const AboutModal = React.lazy(() => import('./components/AboutModal'));
+const AgentChatModal = React.lazy(() => import('./components/AgentChatModal'));
+
+// Lazy loaded components
+const Creator = React.lazy(() => import('./components/Creator').then(module => ({ default: module.Creator })));
+const StyleLibrary = React.lazy(() => import('./components/StyleLibrary').then(module => ({ default: module.StyleLibrary })));
+const ProStudio = React.lazy(() => import('./components/ProStudio').then(module => ({ default: module.ProStudio })));
+const Academia = React.lazy(() => import('./components/Academia').then(module => ({ default: module.Academia })));
+const ProfessionalEditor = React.lazy(() => import('./components/ProfessionalEditor').then(module => ({ default: module.ProfessionalEditor })));
+const InspirationGallery = React.lazy(() => import('./components/InspirationGallery').then(module => ({ default: module.InspirationGallery })));
+const ProLayoutGallery = React.lazy(() => import('./components/ProLayoutGallery').then(module => ({ default: module.ProLayoutGallery })));
+const TaskManager = React.lazy(() => import('./components/TaskManager').then(module => ({ default: module.TaskManager })));
+const PyrolysisHub = React.lazy(() => import('./components/tools/PyrolysisHub').then(module => ({ default: module.PyrolysisHub })));
+const ComparativeScenariosLab = React.lazy(() => import('./components/tools/ComparativeScenariosLab').then(module => ({ default: module.ComparativeScenariosLab })));
+const KnowledgeBase = React.lazy(() => import('./components/KnowledgeBase').then(module => ({ default: module.KnowledgeBase })));
+const ProcessOptimizer = React.lazy(() => import('./components/tools/ProcessOptimizer').then(module => ({ default: module.ProcessOptimizer })));
+const PropertyVisualizer = React.lazy(() => import('./components/tools/PropertyVisualizer').then(module => ({ default: module.PropertyVisualizer })));
+const PyrolysisSimulator = React.lazy(() => import('./components/PyrolysisSimulator'));
+const UserGuide = React.lazy(() => import('./components/UserGuide').then(module => ({ default: module.UserGuide })));
+const Game = React.lazy(() => import('./components/Game').then(module => ({ default: module.Game })));
+const ExperimentDesigner = React.lazy(() => import('./components/tools/ExperimentDesigner').then(module => ({ default: module.ExperimentDesigner })));
+const TitansAtrium = React.lazy(() => import('./components/tools/TitansAtrium').then(module => ({ default: module.TitansAtrium })));
+const TitanWorkstation = React.lazy(() => import('./components/TitanWorkstation').then(module => ({ default: module.TitanWorkstation })));
+const KairosWorkstation = React.lazy(() => import('./components/KairosWorkstation').then(module => ({ default: module.KairosWorkstation })));
+const TitanWorkspace = React.lazy(() => import('./components/TitanWorkspace').then(module => ({ default: module.TitanWorkspace })));
+const HMIControlRoom = React.lazy(() => import('./components/tools/HMIControlRoom').then(module => ({ default: module.HMIControlRoom })));
+const Hyperion9 = React.lazy(() => import('./components/tools/Hyperion-9').then(module => ({ default: module.Hyperion9 })));
+const AssayManager = React.lazy(() => import('./components/tools/AssayManager').then(module => ({ default: module.AssayManager })));
+const Aegis9 = React.lazy(() => import('./components/tools/Aegis9').then(module => ({ default: module.Aegis9 })));
+const Phoenix = React.lazy(() => import('./components/tools/Phoenix').then(module => ({ default: module.Phoenix })));
+const Vulcano = React.lazy(() => import('./components/tools/Vulcano').then(module => ({ default: module.Vulcano })));
+const IAProStudio = React.lazy(() => import('./components/tools/IAProStudio').then(module => ({ default: module.IAProStudio })));
+const NexoControlPanel = React.lazy(() => import('./components/tools/NexoControlPanel').then(module => ({ default: module.NexoControlPanel })));
+const Chronos = React.lazy(() => import('./components/tools/Chronos').then(module => ({ default: module.Chronos })));
+const AgriDeFi = React.lazy(() => import('./components/tools/AgriDeFi').then(module => ({ default: module.AgriDeFi })));
+const InnovationForge = React.lazy(() => import('./components/tools/InnovationForge').then(module => ({ default: module.InnovationForge })));
+const KairosFinancialPanel = React.lazy(() => import('./components/tools/KairosFinancialPanel').then(module => ({ default: module.KairosFinancialPanel })));
+const StrategicRiskSimulator = React.lazy(() => import('./components/tools/StrategicRiskSimulator').then(module => ({ default: module.StrategicRiskSimulator })));
+const CogenerationSimulator = React.lazy(() => import('./components/tools/CogenerationSimulator'));
+const FleetSimulator = React.lazy(() => import('./components/tools/FleetSimulator'));
+const CatalystLab = React.lazy(() => import('./components/tools/CatalystLab').then(module => ({ default: module.CatalystLab })));
+const UtilitiesSimulator = React.lazy(() => import('./components/tools/UtilitiesSimulator').then(module => ({ default: module.UtilitiesSimulator })));
+const GenerativeSimulator = React.lazy(() => import('./components/tools/GenerativeSimulator').then(module => ({ default: module.GenerativeSimulator })));
+const CircularFleet = React.lazy(() => import('./components/tools/CircularFleet').then(module => ({ default: module.CircularFleet })));
+const GlobalViabilityAssessor = React.lazy(() => import('./components/tools/GlobalViabilityAssessor').then(module => ({ default: module.GlobalViabilityAssessor })));
+const EcoCasaSimulator = React.lazy(() => import('./components/tools/EcoCasaSimulator').then(module => ({ default: module.EcoCasaSimulator })));
+const DetailedProjectInput = React.lazy(() => import('./components/tools/DetailedProjectInput').then(module => ({ default: module.DetailedProjectInput })));
+const SustainableCerts = React.lazy(() => import('./components/tools/SustainableCerts').then(module => ({ default: module.SustainableCerts })));
+const CertificationComparator = React.lazy(() => import('./components/tools/CertificationComparator').then(module => ({ default: module.CertificationComparator })));
+const PodcastStudio = React.lazy(() => import('./components/tools/PodcastStudio').then(module => ({ default: module.PodcastStudio })));
+const NexoBridgeView = React.lazy(() => import('./components/nexo/NexoBridgeView').then(module => ({ default: module.NexoBridgeView })));
+const TitansDebate = React.lazy(() => import('./components/tools/TitansForum').then(module => ({ default: module.TitansDebate })));
+const DueDiligenceAnalyzer = React.lazy(() => import('./components/tools/DueDiligenceAnalyzer').then(module => ({ default: module.DueDiligenceAnalyzer })));
+const CallSimulator = React.lazy(() => import('./components/tools/CallSimulator').then(module => ({ default: module.CallSimulator })));
+const CollaborationAgreement = React.lazy(() => import('./components/tools/CollaborationAgreement').then(module => ({ default: module.CollaborationAgreement })));
+const InteractiveFundamentalsLab = React.lazy(() => import('./components/tools/InteractiveFundamentalsLab').then(module => ({ default: module.InteractiveFundamentalsLab })));
+const ArchitecturalSynthesisDashboard = React.lazy(() => import('./components/tools/ArchitecturalSynthesisDashboard').then(module => ({ default: module.ArchitecturalSynthesisDashboard })));
+const SystemStatusReport = React.lazy(() => import('./components/SystemStatusReport').then(module => ({ default: module.SystemStatusReport })));
+const UserProfile = React.lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
+const Manifesto = React.lazy(() => import('./components/Manifesto').then(module => ({ default: module.Manifesto })));
+const EcoHornetTwin = React.lazy(() => import('./components/tools/EcoHornetTwin').then(module => ({ default: module.EcoHornetTwin })));
+const ExpertCommandCenter = React.lazy(() => import('./components/tools/ExpertCommandCenter').then(module => ({ default: module.ExpertCommandCenter })));
+const CinematicAuditPanel = React.lazy(() => import('./components/tools/CinematicAuditPanel').then(module => ({ default: module.CinematicAuditPanel })));
+const AdminConsole = React.lazy(() => import('./components/AdminConsole').then(module => ({ default: module.AdminConsole })));
+const GaiaLab = React.lazy(() => import('./components/tools/GaiaLab').then(module => ({ default: module.GaiaLab })));
+
+import { TaskManager as COPRESETManager, type COPRESETPayload } from './services/taskManager';
 import { OFF_STATE } from './data/hmiConstants';
 import { ALL_STYLES } from './data/styles';
 import { initializeAgentChat, continueAgentChat } from './services/geminiService';
 import type { Chat } from './services/geminiService';
-import AgentChatModal from './components/AgentChatModal';
 
 import { ContentType } from './types';
 import type {
@@ -113,7 +116,7 @@ import { AGENTS_CODEX } from './data/agentsCodex';
 import { PYROLYSIS_MATERIALS, SIMULATION_ENGINE } from './data/pyrolysisMaterials';
 import { CO_PRESETS } from './data/coPresets';
 import { PRESETS } from './data/presets';
-import { StoryMode } from './components/StoryMode';
+const StoryMode = React.lazy(() => import('./components/StoryMode').then(module => ({ default: module.StoryMode })));
 import { storyMissions } from './data/storyMissions';
 import { MOCK_CO_PRESETS, MOCK_REACTORS } from './data/mockForgeData';
 
@@ -235,6 +238,7 @@ export const App: React.FC = () => {
   const [expertCommandContext, setExpertCommandContext] = useState<any | null>(null);
   const [cinematicAuditData, setCinematicAuditData] = useState<AutoSolution | null>(null);
   const [architecturalPreset, setArchitecturalPreset] = useState<any | null>(null);
+  const [initialLabMaterialIds, setInitialLabMaterialIds] = useState<number[] | null>(null);
 
   // Auth State
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -1422,6 +1426,11 @@ Descripción Metafórica: ${element.descripcion_metaforica || 'N/A'}
     setView('titans-debate');
   }, []);
 
+  const handleNavigateToOptimization = useCallback((data: OptimizationChallengePackage) => {
+    setChallengePackage(data);
+    setView('process-optimizer');
+  }, []);
+
 
   const renderView = () => {
     console.log('DEBUG - Current view:', view);
@@ -1509,10 +1518,10 @@ Descripción Metafórica: ${element.descripcion_metaforica || 'N/A'}
       case 'pro-layouts': return <ProLayoutGallery selectedLayout={selectedLayout} onSelectLayout={setSelectedLayout} allStyles={styles} />;
       case 'tasks': return <TaskManager tasks={tasks} onUpdateStatus={(id, status) => setTasks(p => p.map(t => t.id === id ? { ...t, status } : t))} onUpdateTask={handleUpdateTask} onDelete={handleDeleteTask} onLoad={handleLoadTask} onSaveTask={handleSaveTask} setView={setView} knowledgeSources={knowledgeSources} onLoadNarrative={handleLoadNarrative} setInitialHubSearch={() => { }} />;
       case 'pyrolysis-hub': return <PyrolysisHub setView={setView} onSimulateMixture={() => { }} onEditImage={() => { }} onCreateContentFromMaterial={() => { }} virtualMaterial={null} onVirtualMaterialConsumed={() => { }} onSaveTask={handleSaveTask} />;
-      case 'comparative-lab': return <ComparativeScenariosLab onSaveTask={handleSaveTask} onDataConsumed={() => { }} />;
+      case 'comparative-lab': return <ComparativeScenariosLab onSaveTask={handleSaveTask} onDataConsumed={() => setInitialLabMaterialIds(null)} initialMaterialIds={initialLabMaterialIds} />;
       case 'knowledge-base': return <KnowledgeBase sources={knowledgeSources} onAddSource={(s) => setKnowledgeSources(p => [...p, s])} onClearSources={() => setKnowledgeSources([])} onAddVirtualMaterial={() => { }} />;
-      case 'process-optimizer': return <ProcessOptimizer onSaveTask={handleSaveTask} challengePackage={challengePackage} apiKey={API_KEY} />;
-      case 'property-visualizer': return <PropertyVisualizer setView={setView} setTasks={setTasks} setInitialLabMaterialIds={() => { }} />;
+      case 'process-optimizer': return <ProcessOptimizer onSaveTask={handleSaveTask} challengePackage={challengePackage} apiKey={API_KEY} initialMaterialId={initialLabMaterialIds ? initialLabMaterialIds[0] : null} />;
+      case 'property-visualizer': return <PropertyVisualizer setView={setView} setTasks={setTasks} setInitialLabMaterialIds={setInitialLabMaterialIds} />;
       case 'energy-balance': return <PyrolysisSimulator onNavigateWithContext={(payload: any) => {
           const prompt = `Generar una narrativa para un proceso de pirólisis con los siguientes datos:
 Fuente: ${payload.source}
@@ -1567,6 +1576,16 @@ Insight: ${payload.insight}`;
             onPromptGenerated={() => { }}
             onNavigateToRiskSimulator={handleNavigateToRiskSimulator}
             onNavigateToGovernance={handleNavigateToGovernance}
+          />;
+        } else if (activeTitan.claveName.includes('Kairos')) {
+          return <KairosWorkstation
+            titan={activeTitan}
+            onBack={() => { setView('titans-atrium'); setActiveTitan(null); }}
+            onSaveTask={handleSaveTask}
+            knowledgeSources={knowledgeSources}
+            onNavigateToGovernance={handleNavigateToGovernance}
+            onNavigateToOptimization={handleNavigateToOptimization}
+            initialData={srsInitialData} // Assuming Kairos can receive data from Hefesto via this prop
           />;
         } else {
           return <TitanWorkspace
@@ -1655,22 +1674,26 @@ Insight: ${payload.insight}`;
         <ViewSelector currentView={view} setView={setView} />
       </aside>
       <main className="flex-grow p-4 bg-gray-50 overflow-y-auto h-full">
-        {renderView()}
+        <Suspense fallback={<LoadingSpinner />}>
+          {renderView()}
+        </Suspense>
       </main>
-      {isAboutModalOpen && <AboutModal onClose={() => setIsAboutModalOpen(false)} />}
-      {chatAgent && isChatOpen && (
-        <AgentChatModal
-          agent={chatAgent}
-          isOpen={isChatOpen}
-          onClose={handleCloseChat}
-          chatHistory={chatHistory}
-          onSendMessage={handleSendMessage}
-          isAgentReplying={isAgentReplying}
-          onSaveTask={handleSaveTask}
-          onAssistantResponse={(response) => setChatHistory(prev => [...prev, response])}
-          knowledgeSources={knowledgeSources}
-        />
-      )}
+      <Suspense fallback={null}>
+        {isAboutModalOpen && <AboutModal onClose={() => setIsAboutModalOpen(false)} />}
+        {chatAgent && isChatOpen && (
+          <AgentChatModal
+            agent={chatAgent}
+            isOpen={isChatOpen}
+            onClose={handleCloseChat}
+            chatHistory={chatHistory}
+            onSendMessage={handleSendMessage}
+            isAgentReplying={isAgentReplying}
+            onSaveTask={handleSaveTask}
+            onAssistantResponse={(response) => setChatHistory(prev => [...prev, response])}
+            knowledgeSources={knowledgeSources}
+          />
+        )}
+      </Suspense>
       <MarcoAvatar />
     </div>
   );

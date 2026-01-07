@@ -19,7 +19,7 @@ const pdfToText = async (file: File): Promise<string> => {
 
 export const AssistantModal: React.FC<{
   onClose: () => void;
-  onCreate: (assistantData: Omit<Assistant, 'id' | 'status'>) => void;
+  onCreate: (assistantData: Omit<Assistant, 'id' | 'created_at' | 'is_active'>) => void;
   onUpdate: (assistantData: Assistant) => void;
   knowledgeSources: { name: string; content: string }[];
   assistantToEdit?: Assistant | null;
@@ -38,14 +38,15 @@ export const AssistantModal: React.FC<{
   useEffect(() => {
     if (assistantToEdit) {
       setName(assistantToEdit.name);
-      setRolePrompt(assistantToEdit.rolePrompt);
-      setSourceType(assistantToEdit.knowledgeSource.type);
-      if (assistantToEdit.knowledgeSource.type === 'kb') {
-        setSelectedKb(assistantToEdit.knowledgeSource.kb_files || []);
+      setRolePrompt(assistantToEdit.role_prompt);
+      setSourceType(assistantToEdit.knowledge_source_type);
+      
+      if (assistantToEdit.knowledge_source_type === 'kb' && assistantToEdit.knowledge_source_content) {
+        setSelectedKb(assistantToEdit.knowledge_source_content.split(','));
       }
-      if (assistantToEdit.knowledgeSource.type === 'upload' && assistantToEdit.knowledgeSource.files) {
-        setExistingFileNames(assistantToEdit.knowledgeSource.files.map(f => f.name));
-        setUploadedFiles([]);
+      // For 'upload', we can't easily restore files from text content, so we leave it empty or show a message.
+      if (assistantToEdit.knowledge_source_type === 'upload') {
+         setExistingFileNames(['Contenido previamente cargado']);
       }
     }
   }, [assistantToEdit]);
@@ -53,7 +54,7 @@ export const AssistantModal: React.FC<{
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setUploadedFiles(Array.from(e.target.files));
-      setExistingFileNames([]); // New files will replace old ones if user selects new ones
+      setExistingFileNames([]); 
     }
   };
 
@@ -71,7 +72,7 @@ export const AssistantModal: React.FC<{
     setIsProcessing(true);
 
     try {
-      let knowledgeSource: Assistant['knowledgeSource'];
+      let knowledge_source_content = '';
 
       if (sourceType === 'upload') {
         if (uploadedFiles.length > 0) {
@@ -85,12 +86,12 @@ export const AssistantModal: React.FC<{
               } else {
                 throw new Error(`Formato de archivo no soportado: ${file.name}. Solo PDF y TXT.`);
               }
-              return { name: file.name, content };
+              return content; // Just return content
             })
           );
-          knowledgeSource = { type: 'upload', files: filesContent };
-        } else if (isEditMode && assistantToEdit?.knowledgeSource.type === 'upload') {
-          knowledgeSource = assistantToEdit.knowledgeSource; // Keep existing files
+          knowledge_source_content = filesContent.join('\n\n');
+        } else if (isEditMode && assistantToEdit?.knowledge_source_type === 'upload') {
+          knowledge_source_content = assistantToEdit.knowledge_source_content || ''; 
         } else {
           throw new Error('Debes subir al menos un archivo.');
         }
@@ -98,18 +99,25 @@ export const AssistantModal: React.FC<{
         if (selectedKb.length === 0) {
           throw new Error('Debes seleccionar al menos un documento de la base de conocimiento.');
         }
-        knowledgeSource = { type: 'kb', kb_files: selectedKb };
+        knowledge_source_content = selectedKb.join(',');
       }
 
       if (isEditMode && assistantToEdit) {
         onUpdate({
           ...assistantToEdit,
           name,
-          rolePrompt,
-          knowledgeSource
+          role_prompt: rolePrompt,
+          knowledge_source_type: sourceType,
+          knowledge_source_content
         });
       } else {
-        onCreate({ name, rolePrompt, knowledgeSource });
+        onCreate({ 
+            name, 
+            role_prompt: rolePrompt, 
+            knowledge_source_type: sourceType, 
+            knowledge_source_content,
+            owner_titan_id: '' // Parent will fill this
+        });
       }
 
     } catch (err) {
@@ -127,9 +135,9 @@ export const AssistantModal: React.FC<{
       className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60] p-4 animate-fade-in"
       onClick={onClose}
     >
-      <div className="bg-white text-gray-800 rounded-xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-        <form onSubmit={handleSubmit}>
-          <div className="p-8">
+      <div className="bg-white text-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden rounded-xl">
+          <div className="p-6 overflow-y-auto flex-1">
             <h3 id="create-assistant-modal-title" className="text-2xl font-bold mb-6">{isEditMode ? 'Editar Asistente IA' : 'Crear Nuevo Asistente IA'}</h3>
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
             <div className="space-y-4">
@@ -175,7 +183,7 @@ export const AssistantModal: React.FC<{
               )}
             </div>
           </div>
-          <div className="bg-gray-50 px-8 py-4 flex justify-end gap-4 rounded-b-xl">
+          <div className="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-xl flex-shrink-0 border-t border-gray-200">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-md border">
               Cancelar
             </button>

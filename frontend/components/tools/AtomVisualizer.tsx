@@ -47,6 +47,38 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
     const [surfaceStyle, setSurfaceStyle] = useState<'none' | 'dots' | 'vdw' | 'sas' | 'ms'>('none');
     const [bgColor, setBgColor] = useState('#111827'); // gray-900
 
+    // Helper function to render fallback models (memoized)
+    const renderFallbackModel = useCallback((viewer: any, elem: PeriodicElement, special: 'noble' | 'diatomic' | null) => {
+        try {
+            if (!viewer || !elem) return;
+            
+            const elementColor = window.$3Dmol?.elementColors?.Jmol?.[elem.simbolo] || 0x808080;
+            
+            if (special === 'noble') {
+                // Noble gas: show as sphere with outer shell
+                viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 1.8, color: elementColor });
+                viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 2.5, color: 'white', opacity: 0.2 });
+            } else if (special === 'diatomic') {
+                // Diatomic molecule
+                const model = viewer.addModel();
+                model.addAtom({ elem: elem.simbolo, x: -0.6, y: 0, z: 0 });
+                model.addAtom({ elem: elem.simbolo, x: 0.6, y: 0, z: 0 });
+                model.addBond({ start: 0, end: 1 });
+                viewer.setStyle({}, { sphere: { scale: 0.8 }, stick: { colorscheme: 'Jmol' } });
+            } else {
+                // Generic atom representation
+                viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 1.5, color: elementColor });
+            }
+        } catch (err) {
+            console.error("Error rendering fallback model:", err);
+            try {
+                viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 1.5, color: 0x999999 });
+            } catch (e) {
+                console.error("Critical error:", e);
+            }
+        }
+    }, []);
+
     // Effect for creating viewer and loading model data
     useEffect(() => {
         if (!element || !containerRef.current) return;
@@ -73,37 +105,34 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
         const special = structureInfo?.special;
         
         const finishLoading = () => {
-            viewer.zoomTo();
-            viewer.render();
-            setIsLoading(false);
+            setTimeout(() => {
+                try {
+                    viewer.zoomTo();
+                    viewer.render();
+                } catch (err) {
+                    console.error("Error in viewer zoom/render:", err);
+                }
+                setIsLoading(false);
+            }, 100);
         };
 
         if (cid) {
             window.$3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'})
                 .then(() => {
-                    viewer.addUnitCell();
+                    try {
+                        viewer.addUnitCell();
+                    } catch (err) {
+                        console.warn("Could not add unit cell:", err);
+                    }
                     finishLoading();
                 })
                 .catch((err: any) => {
                     console.error("Failed to load model by CID", err);
-                    setError(`No se pudo cargar la estructura para ${element.nombre}. Mostrando fallback.`);
-                    viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 1.5, color: window.$3Dmol.elementColors.Jmol[element.simbolo] || 'gray' });
+                    renderFallbackModel(viewer, element, special);
                     finishLoading();
                 });
-        } else if (special === 'noble') {
-             viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 1.8, color: window.$3Dmol.elementColors.Jmol[element.simbolo] || 'gray' });
-             viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 2.5, color: 'white', opacity: 0.2 });
-             finishLoading();
-        } else if (special === 'diatomic') {
-             const model = viewer.addModel();
-             model.addAtom({ elem: element.simbolo, x: -0.6, y: 0, z: 0 });
-             model.addAtom({ elem: element.simbolo, x: 0.6, y: 0, z: 0 });
-             model.addBond({ start: 0, end: 1 });
-             finishLoading();
-        }
-        else {
-            setError(`No hay una estructura predefinida para ${element.nombre}. Mostrando un modelo atómico simple.`);
-            viewer.addSphere({ center: { x: 0, y: 0, z: 0 }, radius: 1.5, color: window.$3Dmol.elementColors.Jmol[element.simbolo] || 'gray' });
+        } else {
+            renderFallbackModel(viewer, element, special);
             finishLoading();
         }
         
@@ -231,10 +260,20 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 aspect-square relative bg-black rounded-lg" ref={containerRef}>
+            <div className="lg:col-span-2 w-full h-[600px] relative bg-black rounded-lg" ref={containerRef}>
                 {(isLoading || error) && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white bg-black/50 p-4 text-center">
-                        {isLoading ? 'Cargando modelo 3D...' : error}
+                    <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70 p-4 text-center rounded-lg">
+                        {isLoading ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-8 h-8 border-4 border-gray-600 border-t-cyan-400 rounded-full animate-spin"></div>
+                                <p>Cargando modelo 3D...</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="font-bold text-red-400 mb-2">Advertencia</p>
+                                <p>{error}</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

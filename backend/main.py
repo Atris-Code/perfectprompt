@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 
 # Auth Imports
 from database import get_db, engine, Base
-from models import User, AuditLog, Role, Material
-from schemas import LoginRequest, TokenResponse, ContextPayload, AuditLogResponse, UserRoleUpdate, User as UserSchema, UserCreate, BridgeRequest, Material as MaterialSchema, SimulationRequest, SimulationResult, KairosRequest, KairosResponse
+from models import User, AuditLog, Role, Material, Assistant
+from schemas import LoginRequest, TokenResponse, ContextPayload, AuditLogResponse, UserRoleUpdate, User as UserSchema, UserCreate, BridgeRequest, Material as MaterialSchema, SimulationRequest, SimulationResult, KairosRequest, KairosResponse, AssistantCreate, AssistantUpdate, Assistant as AssistantSchema
 from security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
 from dependencies import get_current_user, require_role
 from nexo_brain import get_system_prompt
@@ -506,6 +506,47 @@ async def get_kairos_verdict(request: KairosRequest, current_user: User = Depend
     )
     
     return KairosResponse(verdict=verdict)
+
+# --- ASSISTANT ENDPOINTS ---
+
+@app.post("/assistants/", response_model=AssistantSchema, tags=["Assistants"])
+def create_assistant(assistant: AssistantCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_assistant = Assistant(**assistant.dict())
+    db.add(db_assistant)
+    db.commit()
+    db.refresh(db_assistant)
+    return db_assistant
+
+@app.get("/assistants/", response_model=List[AssistantSchema], tags=["Assistants"])
+def read_assistants(owner_titan_id: str = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    query = db.query(Assistant)
+    if owner_titan_id:
+        query = query.filter(Assistant.owner_titan_id == owner_titan_id)
+    return query.all()
+
+@app.patch("/assistants/{assistant_id}", response_model=AssistantSchema, tags=["Assistants"])
+def update_assistant(assistant_id: str, assistant_update: AssistantUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_assistant = db.query(Assistant).filter(Assistant.id == assistant_id).first()
+    if not db_assistant:
+        raise HTTPException(status_code=404, detail="Assistant not found")
+    
+    update_data = assistant_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_assistant, key, value)
+    
+    db.commit()
+    db.refresh(db_assistant)
+    return db_assistant
+
+@app.delete("/assistants/{assistant_id}", tags=["Assistants"])
+def delete_assistant(assistant_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_assistant = db.query(Assistant).filter(Assistant.id == assistant_id).first()
+    if not db_assistant:
+        raise HTTPException(status_code=404, detail="Assistant not found")
+    
+    db.delete(db_assistant)
+    db.commit()
+    return {"message": "Assistant deleted successfully"}
 
 if __name__ == "__main__":
     import uvicorn

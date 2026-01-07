@@ -127,20 +127,18 @@ const ElementDetailModal: React.FC<{
     );
 };
 
-const ElementCard: React.FC<{ element: PeriodicElement; onSelect: () => void; isVisible: boolean }> = ({ element, onSelect, isVisible }) => (
+const ElementCard: React.FC<{ element: PeriodicElement; onSelect: () => void; isVisible: boolean; onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => void; onMouseLeave: () => void }> = ({ element, onSelect, isVisible, onMouseEnter, onMouseLeave }) => (
     <button
         onClick={onSelect}
-        className={`p-1.5 rounded-md text-left transition-all duration-300 transform hover:scale-110 hover:z-10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white ${categoryColors[element.serie_quimica] || 'bg-gray-700'} ${isVisible ? 'opacity-100' : 'opacity-20'} `}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        className={`p-2 rounded-md text-left transition-all duration-300 transform hover:scale-125 hover:z-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white ${categoryColors[element.serie_quimica] || 'bg-gray-700'} ${isVisible ? 'opacity-100' : 'opacity-20'} `}
         style={{ gridColumnStart: element.xpos, gridRowStart: element.ypos }}
-        aria-label={`Details for ${element.nombre}`}
+        aria-label={`${element.nombre} (${element.simbolo})`}
         tabIndex={isVisible ? 0 : -1}
+        title={`${element.nombre} - Nº ${element.numero_atomico}`}
     >
-        <div className="flex justify-between items-baseline">
-            <span className="text-xs font-medium">{element.numero_atomico}</span>
-            <span className="text-xs font-mono">{element.masa_atomica > 0 ? element.masa_atomica.toFixed(3) : ''}</span>
-        </div>
-        <p className="text-2xl font-bold text-center my-0.5">{element.simbolo}</p>
-        <p className="text-xs text-center truncate">{element.nombre}</p>
+        <p className="text-3xl font-bold text-center">{element.simbolo}</p>
     </button>
 );
 
@@ -397,6 +395,15 @@ export const InteractiveFundamentalsLab: React.FC<InteractiveFundamentalsLabProp
         setIsFilterAccordionOpen(false);
     };
 
+    const handleElementCardMouseEnter = (element: PeriodicElement, e: React.MouseEvent<HTMLButtonElement>) => {
+        setHoveredElement(element);
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTooltipPosition({
+            top: rect.top + window.scrollY - 80,
+            left: rect.left + window.scrollX + (rect.width / 2) - 100
+        });
+    };
+
     if (isLoading) return <div className="text-center p-8">Cargando Explorador Elemental...</div>;
     if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
 
@@ -501,7 +508,10 @@ export const InteractiveFundamentalsLab: React.FC<InteractiveFundamentalsLabProp
 
             <div 
                 className="mt-8 grid grid-cols-[repeat(18,minmax(0,1fr))] grid-rows-[repeat(10,minmax(0,1fr))] gap-1 mx-auto max-w-7xl aspect-[18/10]"
-                onMouseLeave={() => setHoveredElement(null)}
+                onMouseLeave={() => {
+                    setHoveredElement(null);
+                    setTooltipPosition(null);
+                }}
             >
                 {elements.map(element => (
                     <ElementCard 
@@ -509,6 +519,11 @@ export const InteractiveFundamentalsLab: React.FC<InteractiveFundamentalsLabProp
                         element={element} 
                         onSelect={() => handleElementSelect(element)} 
                         isVisible={filteredElementNumbers.has(element.numero_atomico)}
+                        onMouseEnter={(e) => handleElementCardMouseEnter(element, e)}
+                        onMouseLeave={() => {
+                            setHoveredElement(null);
+                            setTooltipPosition(null);
+                        }}
                     />
                 ))}
             </div>

@@ -1213,3 +1213,85 @@ export async function generateNexoResponse(
     }
 }
 
+// --- ASSISTANT API ---
+
+export async function createAssistant(assistantData: Omit<Assistant, 'id' | 'created_at'>): Promise<Assistant> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+
+    const response = await fetch(`${BASE_URL}/assistants/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(assistantData)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to create assistant: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+export async function getAssistants(ownerTitanId?: string): Promise<Assistant[]> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    
+    let url = `${BASE_URL}/assistants/`;
+    if (ownerTitanId) {
+        url += `?owner_titan_id=${encodeURIComponent(ownerTitanId)}`;
+    }
+
+    const response = await fetch(url, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch assistants: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+export async function updateAssistant(assistantId: string, updates: Partial<Assistant>): Promise<Assistant> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+
+    const response = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(updates)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to update assistant: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+export async function deleteAssistant(assistantId: string): Promise<void> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+
+    const response = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete assistant: ${response.statusText}`);
+    }
+}
+

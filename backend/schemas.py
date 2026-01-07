@@ -112,3 +112,30 @@ class KairosResponse(BaseModel):
     warnings: List[str]
     analysis: str
 
+# --- ASSISTANT SCHEMAS ---
+
+class AssistantBase(BaseModel):
+    name: str
+    role_prompt: str
+    knowledge_source_type: str
+    knowledge_source_content: Optional[str] = None
+    owner_titan_id: str
+    is_active: Optional[bool] = False
+
+class AssistantCreate(AssistantBase):
+    pass
+
+class AssistantUpdate(BaseModel):
+    name: Optional[str] = None
+    role_prompt: Optional[str] = None
+    knowledge_source_type: Optional[str] = None
+    knowledge_source_content: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class Assistant(AssistantBase):
+    id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+

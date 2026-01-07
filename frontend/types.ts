@@ -107,13 +107,12 @@ export interface PeriodicElement {
 export interface Assistant {
   id: string;
   name: string;
-  rolePrompt: string;
-  knowledgeSource: {
-    type: 'upload' | 'kb';
-    files?: { name: string; content: string }[];
-    kb_files?: string[]; // names of files from knowledge base
-  };
-  status: 'ACTIVE' | 'INACTIVE';
+  role_prompt: string;
+  knowledge_source_type: 'upload' | 'kb';
+  knowledge_source_content?: string;
+  owner_titan_id: string;
+  is_active: boolean;
+  created_at?: string;
 }
 
 // FIX: Added missing SkillModule interface to fix type error in TitanWorkspace.tsx.

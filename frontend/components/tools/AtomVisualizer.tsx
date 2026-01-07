@@ -89,6 +89,12 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
         const initViewer = () => {
             if (!isMounted) return;
 
+            // Wait for container dimensions
+            if (containerRef.current && (containerRef.current.clientWidth === 0 || containerRef.current.clientHeight === 0)) {
+                setTimeout(initViewer, 100);
+                return;
+            }
+
             // Double check for library availability
             if (typeof window.$3Dmol === 'undefined') {
                 setError("La librería de visualización 3D no se ha cargado. Por favor, recarga la página.");

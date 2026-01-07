@@ -82,61 +82,114 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
     // Effect for creating viewer and loading model data
     useEffect(() => {
         if (!element || !containerRef.current) return;
-        if (typeof window.$3Dmol === 'undefined') {
-            setError("La librería de visualización 3D no se ha cargado. Por favor, recarga la página.");
-            setIsLoading(false);
-            return;
-        }
 
-        setError('');
-        setIsLoading(true);
-        if (containerRef.current) {
-            containerRef.current.innerHTML = ''; // Clear previous viewer
-        }
+        let isMounted = true;
+        let viewer: any = null;
 
-        const viewer = window.$3Dmol.createViewer(containerRef.current, {
-            defaultcolors: window.$3Dmol.elementColors.Jmol,
-            backgroundColor: bgColor,
-        });
-        viewerRef.current = viewer;
+        const initViewer = () => {
+            if (!isMounted) return;
 
-        const structureInfo = ELEMENT_STRUCTURE_MAP[element.nombre];
-        const cid = structureInfo?.cid;
-        const special = structureInfo?.special;
-        
-        const finishLoading = () => {
-            setTimeout(() => {
-                try {
-                    viewer.zoomTo();
-                    viewer.render();
-                } catch (err) {
-                    console.error("Error in viewer zoom/render:", err);
-                }
+            // Double check for library availability
+            if (typeof window.$3Dmol === 'undefined') {
+                setError("La librería de visualización 3D no se ha cargado. Por favor, recarga la página.");
                 setIsLoading(false);
-            }, 100);
-        };
+                return;
+            }
 
-        if (cid) {
-            window.$3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'})
-                .then(() => {
-                    try {
-                        viewer.addUnitCell();
-                    } catch (err) {
-                        console.warn("Could not add unit cell:", err);
+            try {
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ''; // Clear previous viewer
+                }
+
+                // Initialize viewer with try-catch
+                try {
+                    viewer = window.$3Dmol.createViewer(containerRef.current, {
+                        defaultcolors: window.$3Dmol.elementColors.Jmol,
+                        backgroundColor: bgColor,
+                    });
+                } catch (creationError) {
+                    console.error("Error creating 3D viewer:", creationError);
+                    setError("Error al inicializar el visualizador 3D.");
+                    setIsLoading(false);
+                    return;
+                }
+
+                viewerRef.current = viewer;
+                setError('');
+                setIsLoading(true);
+
+                const structureInfo = ELEMENT_STRUCTURE_MAP[element.nombre];
+                const cid = structureInfo?.cid;
+                const special = structureInfo?.special;
+                
+                const finishLoading = () => {
+                    if (!isMounted) return;
+                    setTimeout(() => {
+                        try {
+                            if (viewer) {
+                                viewer.zoomTo();
+                                viewer.render();
+                            }
+                        } catch (err) {
+                            console.error("Error in viewer zoom/render:", err);
+                        }
+                        if (isMounted) setIsLoading(false);
+                    }, 100);
+                };
+
+                if (cid) {
+                    // Start download
+                    const downloadPromise = window.$3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'});
+                    
+                    // Handle output which might be a Promise or undefined depending on version
+                    if (downloadPromise && typeof downloadPromise.then === 'function') {
+                        downloadPromise
+                            .then(() => {
+                                if (!isMounted) return;
+                                try {
+                                    viewer.addUnitCell();
+                                } catch (err) {
+                                    console.warn("Could not add unit cell:", err);
+                                }
+                                finishLoading();
+                            })
+                            .catch((err: any) => {
+                                if (!isMounted) return;
+                                console.error("Failed to load model by CID", err);
+                                renderFallbackModel(viewer, element, special);
+                                finishLoading();
+                            });
+                    } else {
+                        // If logic is synchronous or returns void (older versions)
+                        // Wait a tick and then finish
+                        finishLoading();
                     }
-                    finishLoading();
-                })
-                .catch((err: any) => {
-                    console.error("Failed to load model by CID", err);
+                } else {
                     renderFallbackModel(viewer, element, special);
                     finishLoading();
-                });
-        } else {
-            renderFallbackModel(viewer, element, special);
-            finishLoading();
-        }
+                }
+
+            } catch (globalError) {
+                console.error("Critical error in AtomVisualizer:", globalError);
+                if (isMounted) {
+                    setError("Error crítico en el componente de visualización.");
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        // Helper to wait for container layout
+        const timer = setTimeout(initViewer, 100); 
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+            if (viewerRef.current) {
+                viewerRef.current = null;
+            }
+        };
         
-    }, [element, bgColor]); // bgColor needs to be here to recreate viewer on change
+    }, [element, bgColor, renderFallbackModel]);
 
     // Effect for updating styles
     useEffect(() => {

@@ -205,6 +205,9 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
         const resizeObserver = new ResizeObserver(() => {
             if (viewerRef.current) {
                 viewerRef.current.resize();
+                 try {
+                    viewerRef.current.render();
+                } catch (e) { /* ignore render errors during resize */ }
             }
         });
         
@@ -228,6 +231,9 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
         const viewer = viewerRef.current;
         if (!viewer || isLoading) return;
         
+        // Ensure dimensions are correct before styling/rendering
+        viewer.resize();
+
         // Clear everything before applying new styles
         viewer.removeAllSurfaces();
         viewer.setStyle({}, {});
@@ -270,6 +276,7 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
             if (surfaceType) {
                 viewer.addSurface(surfaceType, surfaceOptions);
             }
+        viewer.zoomTo();
         }
         
         viewer.render();

@@ -38,7 +38,7 @@ const ElementDetailModal: React.FC<{
     onSynergyAction: (action: 'informe' | 'visual' | 'mercado', element: PeriodicElement) => void;
     onSaveTask: (task: Task, navigate?: boolean) => void;
 }> = ({ element, onClose, onAnalyze, onSynergyAction, onSaveTask }) => {
-    const [activeTab, setActiveTab] = useState<'details' | 'visualize'>('visualize');
+    const [activeTab, setActiveTab] = useState<'details' | 'visualize'>('details'); // Default to details to prevent 3D visualizer crash on incidental load
 
     const TabButton: React.FC<{ tabId: 'details' | 'visualize', label: string }> = ({ tabId, label }) => (
         <button
@@ -132,13 +132,13 @@ const ElementCard: React.FC<{ element: PeriodicElement; onSelect: () => void; is
         onClick={onSelect}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`p-2 rounded-md text-left transition-all duration-300 transform hover:scale-125 hover:z-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white ${categoryColors[element.serie_quimica] || 'bg-gray-700'} ${isVisible ? 'opacity-100' : 'opacity-20'} `}
+        className={`p-1 rounded-md text-left transition-all duration-300 transform hover:scale-125 hover:z-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white ${categoryColors[element.serie_quimica] || 'bg-gray-700'} ${isVisible ? 'opacity-100' : 'opacity-20'} `}
         style={{ gridColumnStart: element.xpos, gridRowStart: element.ypos }}
         aria-label={`${element.nombre} (${element.simbolo})`}
         tabIndex={isVisible ? 0 : -1}
         title={`${element.nombre} - Nº ${element.numero_atomico}`}
     >
-        <p className="text-3xl font-bold text-center">{element.simbolo}</p>
+        <p className="text-lg font-bold text-center sm:text-xl md:text-2xl leading-none">{element.simbolo}</p>
     </button>
 );
 

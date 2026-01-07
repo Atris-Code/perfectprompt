@@ -133,6 +133,7 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
                     setTimeout(() => {
                         try {
                             if (viewer) {
+                                viewer.resize(); // Ensure canvas matches container dimensions
                                 viewer.zoomTo();
                                 viewer.render();
                             }
@@ -187,9 +188,21 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
         // Helper to wait for container layout
         const timer = setTimeout(initViewer, 100); 
 
+        // Add ResizeObserver to handle dynamic layout changes
+        const resizeObserver = new ResizeObserver(() => {
+            if (viewerRef.current) {
+                viewerRef.current.resize();
+            }
+        });
+        
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
         return () => {
             isMounted = false;
             clearTimeout(timer);
+            resizeObserver.disconnect();
             if (viewerRef.current) {
                 viewerRef.current = null;
             }

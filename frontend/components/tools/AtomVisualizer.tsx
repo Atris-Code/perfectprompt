@@ -82,67 +82,158 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
     // Effect for creating viewer and loading model data
     useEffect(() => {
         if (!element || !containerRef.current) return;
-        if (typeof window.$3Dmol === 'undefined') {
-            setError("La librería de visualización 3D no se ha cargado. Por favor, recarga la página.");
-            setIsLoading(false);
-            return;
-        }
 
-        setError('');
-        setIsLoading(true);
-        if (containerRef.current) {
-            containerRef.current.innerHTML = ''; // Clear previous viewer
-        }
+        let isMounted = true;
+        let viewer: any = null;
 
-        const viewer = window.$3Dmol.createViewer(containerRef.current, {
-            defaultcolors: window.$3Dmol.elementColors.Jmol,
-            backgroundColor: bgColor,
-        });
-        viewerRef.current = viewer;
+            const initViewer = () => {
+                if (!isMounted || !containerRef.current) return;
 
-        const structureInfo = ELEMENT_STRUCTURE_MAP[element.nombre];
-        const cid = structureInfo?.cid;
-        const special = structureInfo?.special;
-        
-        const finishLoading = () => {
-            setTimeout(() => {
-                try {
-                    viewer.zoomTo();
-                    viewer.render();
-                } catch (err) {
-                    console.error("Error in viewer zoom/render:", err);
+                const rect = containerRef.current.getBoundingClientRect();
+                // Wait for container dimensions (using rect is more reliable for transforms)
+                if (rect.width < 10 || rect.height < 10) {
+                    setTimeout(initViewer, 100);
+                    return;
                 }
-                setIsLoading(false);
-            }, 100);
-        };
 
-        if (cid) {
-            window.$3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'})
-                .then(() => {
-                    try {
-                        viewer.addUnitCell();
-                    } catch (err) {
-                        console.warn("Could not add unit cell:", err);
+                // Double check for library availability
+                if (typeof window.$3Dmol === 'undefined') {
+                    setError("La librería de visualización 3D no se ha cargado. Por favor, recarga la página.");
+                    setIsLoading(false);
+                    return;
+                }
+
+                try {
+                    if (containerRef.current) {
+                        try {
+                             // Safe clear since this container has no React children
+                            containerRef.current.innerHTML = '';
+                        } catch (e) {
+                            console.warn("Could not clear container:", e);
+                        }
                     }
-                    finishLoading();
-                })
-                .catch((err: any) => {
-                    console.error("Failed to load model by CID", err);
-                    renderFallbackModel(viewer, element, special);
-                    finishLoading();
-                });
-        } else {
-            renderFallbackModel(viewer, element, special);
-            finishLoading();
-        }
+
+                    // Initialize viewer with try-catch and explicit check
+                    try {
+                        // Extra safety check before WebGL context creation
+                        const canvas = document.createElement('canvas');
+                        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                        if (!gl) {
+                             throw new Error("WebGL no disponible");
+                        }
+                        
+                        viewer = window.$3Dmol.createViewer(containerRef.current, {
+                            defaultcolors: window.$3Dmol.elementColors.Jmol,
+                            backgroundColor: bgColor,
+                        });
+                    } catch (creationError) {
+                        console.error("Error creating 3D viewer:", creationError);
+                        setError("Error al inicializar el visualizador 3D. WebGL podría no estar disponible.");
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    viewerRef.current = viewer;
+                    setError('');
+                    setIsLoading(true);
+
+                    const structureInfo = ELEMENT_STRUCTURE_MAP[element.nombre];
+                    const cid = structureInfo?.cid;
+                    const special = structureInfo?.special;
+                    
+                    const finishLoading = () => {
+                        if (!isMounted) return;
+                        setTimeout(() => {
+                            try {
+                                if (viewer) {
+                                    viewer.resize(); // Ensure canvas matches container dimensions
+                                    viewer.zoomTo();
+                                    viewer.render();
+                                }
+                            } catch (err) {
+                                console.error("Error in viewer zoom/render:", err);
+                            }
+                            if (isMounted) setIsLoading(false);
+                        }, 100);
+                    };
+
+                    if (cid) {
+                        // Start download
+                        const downloadPromise = window.$3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'});
+                        
+                        // Handle output which might be a Promise or undefined depending on version
+                        if (downloadPromise && typeof downloadPromise.then === 'function') {
+                            downloadPromise
+                                .then(() => {
+                                    if (!isMounted) return;
+                                    try {
+                                        viewer.addUnitCell();
+                                    } catch (err) {
+                                        console.warn("Could not add unit cell:", err);
+                                    }
+                                    finishLoading();
+                                })
+                                .catch((err: any) => {
+                                    if (!isMounted) return;
+                                    console.error("Failed to load model by CID", err);
+                                    renderFallbackModel(viewer, element, special);
+                                    finishLoading();
+                                });
+                        } else {
+                            // If logic is synchronous or returns void (older versions)
+                            // Wait a tick and then finish
+                            finishLoading();
+                        }
+                    } else {
+                        renderFallbackModel(viewer, element, special);
+                        finishLoading();
+                    }
+
+                } catch (globalError) {
+                    console.error("Critical error in AtomVisualizer:", globalError);
+                    if (isMounted) {
+                        setError("Error crítico en el componente de visualización.");
+                        setIsLoading(false);
+                    }
+                }
+            };
+
+        // Helper to wait for container layout
+        const timer = setTimeout(initViewer, 100); 
+
+        // Add ResizeObserver to handle dynamic layout changes
+        const resizeObserver = new ResizeObserver(() => {
+            if (viewerRef.current) {
+                viewerRef.current.resize();
+                 try {
+                    viewerRef.current.render();
+                } catch (e) { /* ignore render errors during resize */ }
+            }
+        });
         
-    }, [element, bgColor]); // bgColor needs to be here to recreate viewer on change
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+            resizeObserver.disconnect();
+            if (viewerRef.current) {
+                viewerRef.current = null;
+            }
+        };
+        
+    }, [element, bgColor, renderFallbackModel]);
 
     // Effect for updating styles
     useEffect(() => {
         const viewer = viewerRef.current;
         if (!viewer || isLoading) return;
         
+        // Ensure dimensions are correct before styling/rendering
+        viewer.resize();
+
         // Clear everything before applying new styles
         viewer.removeAllSurfaces();
         viewer.setStyle({}, {});
@@ -185,6 +276,7 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
             if (surfaceType) {
                 viewer.addSurface(surfaceType, surfaceOptions);
             }
+        viewer.zoomTo();
         }
         
         viewer.render();
@@ -260,9 +352,10 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 w-full h-[600px] relative bg-black rounded-lg" ref={containerRef}>
+            <div className="lg:col-span-2 w-full h-[600px] relative bg-black rounded-lg">
+                <div ref={containerRef} className="absolute inset-0 w-full h-full" />
                 {(isLoading || error) && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70 p-4 text-center rounded-lg">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center text-white bg-black/70 p-4 text-center rounded-lg">
                         {isLoading ? (
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-8 h-8 border-4 border-gray-600 border-t-cyan-400 rounded-full animate-spin"></div>

@@ -23,6 +23,43 @@ import PDFPreviewModal from './PDFPreviewModal';
 import { TONES } from '../constants';
 import { PRESETS } from '../data/presets';
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error("Creator Component Crash:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-8 text-center">
+                    <h2 className="text-2xl font-bold text-red-600 mb-4">Algo salió mal en el Creador</h2>
+                    <p className="text-gray-700 mb-4">Se ha producido un error inesperado al cargar la herramienta.</p>
+                    <div className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-40 max-w-2xl mx-auto text-left mb-6">
+                        <code className="text-red-500 text-sm">{this.state.error?.toString()}</code>
+                    </div>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                        Recargar Página
+                    </button>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
 const initialFormData: FormData = {
     objective: '',
     tone: 'Neutro',
@@ -406,6 +443,7 @@ export const Creator: React.FC<CreatorProps> = ({
     };
 
     return (
+        <ErrorBoundary>
         <div className="bg-white p-8 rounded-2xl shadow-lg">
             <header className="text-center mb-10">
                 <h2 className="text-3xl font-bold text-gray-900">{t('creator.title')}</h2>
@@ -567,5 +605,6 @@ export const Creator: React.FC<CreatorProps> = ({
                 </div>
             </div>
         </div>
+        </ErrorBoundary>
     );
 };

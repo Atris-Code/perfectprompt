@@ -42,3 +42,6 @@ postgres_data/
 *.njsproj
 *.sln
 *.sw?
+
+# Bases de datos SQLite (regeneradas con seed_materials.py)
+*.db

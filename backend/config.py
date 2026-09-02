@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # --- Proveedor de IA (Nexo Sinérgico) ---
     # OpenAI es el proveedor principal; Claude es el fallback (texto/visión).
     # Las claves viven SOLO en el servidor. Nunca se exponen al navegador.
-    OPENAI_API_KEY: str = "REDACTED"
+    OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"

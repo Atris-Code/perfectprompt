@@ -1,8 +1,9 @@
 """
 seed_materials.py — Siembra la tabla `materials` con los 135 registros de biomasa
-unificados (Sólido / Líquido / Gaseoso) desde frontend/data/pyrolysisMaterials.ts.
+unificados (Sólido / Líquido / Gaseoso).
 
-Esto convierte al backend en la fuente de verdad de los datos de pirólisis.
+La fuente principal es `materials_seed.json` (autocontenida, funciona dentro del
+contenedor Docker). En desarrollo local hay fallback al TS del frontend.
 Ejecutar:  cd backend && python seed_materials.py
 """
 import json
@@ -15,15 +16,21 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from database import engine, SessionLocal, Base
 from models import Material
 
-DATA_FILE = os.path.join(
+SEED_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "materials_seed.json")
+TS_FILE = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "..", "frontend", "data", "pyrolysisMaterials.ts",
 )
 
 
 def extract_materials() -> list:
-    """Extrae el array PYROLYSIS_MATERIALS del archivo TS y lo parsea como JSON."""
-    with open(DATA_FILE, encoding="utf-8") as f:
+    """Carga los 135 materiales desde materials_seed.json (autocontenido)."""
+    if os.path.exists(SEED_JSON):
+        with open(SEED_JSON, encoding="utf-8") as f:
+            return json.load(f)
+
+    # Fallback (desarrollo local): extraer del archivo TS del frontend.
+    with open(TS_FILE, encoding="utf-8") as f:
         src = f.read()
     m = re.search(r'PYROLYSIS_MATERIALS[^=]*=\s*\[', src)
     if not m:
@@ -60,7 +67,7 @@ def derive_state(fase: str) -> str:
 
 def seed():
     materials = extract_materials()
-    print(f"Extracted {len(materials)} materials from {DATA_FILE}")
+    print(f"Extracted {len(materials)} materials")
 
     # Migración de esquema: la tabla antigua no tiene fase/categoria/origen_feedstock.
     # La recreamos con el esquema nuevo y la sembramos con los 135 registros.

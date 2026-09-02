@@ -1,7 +1,6 @@
 import React from 'react';
 
-// FIX: Removed unused 'Chat' type import.
-// import type { Chat } from "@google/genai";
+// FIX: la integración directa con el proveedor anterior fue reemplazada por services/aiShim.ts (proxy backend).
 
 // FIX: Moved AIStudio interface into the global scope to resolve subsequent property declaration errors.
 // This ensures there is only one, globally-scoped definition for AIStudio.
@@ -104,14 +103,19 @@ export interface PeriodicElement {
   ypos: number;
 }
 
+// Fase 5: tipo Assistant unificado al uso real del frontend (camelCase).
+// El mapeo a snake_case del backend se hace en nexoService.ts.
 export interface Assistant {
   id: string;
   name: string;
-  role_prompt: string;
-  knowledge_source_type: 'upload' | 'kb';
-  knowledge_source_content?: string;
-  owner_titan_id: string;
-  is_active: boolean;
+  rolePrompt: string;
+  knowledgeSource: {
+    type: 'upload' | 'kb';
+    kb_files?: string[];
+    content?: string;
+  };
+  status?: 'ACTIVE' | 'INACTIVE';
+  ownerTitanId?: string;
   created_at?: string;
 }
 
@@ -201,7 +205,7 @@ export interface HandoffData {
 }
 // --- End Handoff Data ---
 
-// FIX: Added missing NarrativeFields interface required by geminiService.ts.
+// FIX: Added missing NarrativeFields interface required by nexoService.ts.
 export interface NarrativeFields {
   objective: string;
   audience: string;
@@ -209,7 +213,7 @@ export interface NarrativeFields {
   uvp: string;
 }
 
-// FIX: Added missing AgentDefinition interface required by geminiService.ts.
+// FIX: Added missing AgentDefinition interface required by nexoService.ts.
 export interface AgentDefinition {
   id: string;
   name: string;
@@ -224,7 +228,7 @@ export interface Participant {
   type: 'internal' | 'external';
 }
 
-// FIX: Added missing ForumConfig interface required by geminiService.ts and TitansForum.tsx.
+// FIX: Added missing ForumConfig interface required by nexoService.ts and TitansForum.tsx.
 export interface ForumConfig {
   instructions: string;
   interactionStyle: string;
@@ -306,7 +310,7 @@ export interface FormData {
       variety?: number;
       stylization?: number;
       rarity?: number;
-      // FIX: Added '4:3' and '3:4' to the aspectRatio type to support more image formats as per Gemini API guidelines and fix the error in data/galleryItems.ts.
+      // FIX: Added '4:3' and '3:4' to the aspectRatio type to support more image formats and fix the error in data/galleryItems.ts.
       aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
       lensType?: string;
       lensAperture?: string;
@@ -634,8 +638,8 @@ export interface SensationCategory {
 }
 
 export type View = 'creator' | 'library' | 'pro' | 'academia' | 'editor' | 'gallery' | 'pro-layouts' | 'tasks' | 'pyrolysis-hub' | 'comparative-lab' | 'knowledge-base' | 'process-optimizer' | 'property-visualizer' | 'energy-balance' | 'user-guide' | 'game' | 'experiment-designer' | 'titans-atrium' | 'hmi-control-room' | 'hyperion-9' | 'assay-manager' | 'aegis-9' | 'phoenix' | 'vulcano' | 'bioeconomy-lab' | 'chronos' | 'agriDeFi' | 'gaia-lab' | 'innovation-forge' | 'kairos-panel' | 'strategic-risk-simulator' | 'cogeneration-simulator' | 'fleet-simulator' | 'catalyst-lab' | 'utilities-simulator' | 'generative-simulator' | 'circular-fleet' | 'energy-explorer' | 'viability-assessor' | 'eco-casa-simulator' | 'detailed-project-input' | 'sustainable-certs' | 'certification-comparator' | 'podcast-studio' | 'titans-debate' | 'due-diligence-analyzer' | 'call-simulator' | 'collaboration-agreement' | 'interactive-fundamentals-lab' | 'architectural-synthesis-dashboard' | 'system-status-report' | 'user-profile' | 'manifesto' | 'story-mode' | 'eco-hornet-twin' | 'expert-command-center' | 'titan-workstation' | 'cinematic-audit' | 'nexo-bridge' | 'admin-console';
-// FIX: The SystemCategory type has been updated to reflect the new categorization used throughout the application.
-export type SystemCategory = 'Núcleo Creativo' | 'Estudios y Talleres' | 'Simulación Industrial' | 'Análisis y Datos' | 'Finanzas y Estrategia' | 'Colaboración y Sistema';
+// Fase 3: taxonomía de 4 zonas alineada con el Manifiesto del Nexo Sinérgico.
+export type SystemCategory = 'Ala Analítica' | 'Ala Creativa' | 'Nexo' | 'Gobernanza y Sistema';
 export interface SystemElement {
   id: View;
   nameKey: string;

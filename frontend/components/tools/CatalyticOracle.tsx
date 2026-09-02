@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getOracleRecommendation } from '../../services/geminiService';
+import { getOracleRecommendation } from '../../services/nexoService';
 import type { OracleRecommendation } from '../../types';
 
 interface CatalyticOracleProps {

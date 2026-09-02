@@ -15,7 +15,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1ucfpJg4bQbC5b9wq7TtLp6
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the AI provider keys in `.env` (backend): `OPENAI_API_KEY` (primario) y `ANTHROPIC_API_KEY` (fallback). Las claves viven SOLO en el servidor; el navegador ya no expone ninguna clave.
 3. Run the app:
    `npm run dev`
 
@@ -41,7 +41,7 @@ The application includes comprehensive monitoring with Grafana and Prometheus.
 ### What Gets Monitored
 
 - **API Performance**: Request rates, response times, error rates
-- **AI Service Usage**: Gemini API calls and success rates
+- **AI Service Usage**: AI API calls and success rates
 - **User Feedback**: Sentiment analysis and interaction metrics
 - **System Resources**: CPU, memory, and disk usage
 - **Business Metrics**: Insight generation statistics

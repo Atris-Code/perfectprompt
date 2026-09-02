@@ -1,18 +1,18 @@
 {
   "dashboard": {
-    "id": null,
-    "title": "Nexo Sinérgico - API Monitoring",
-    "tags": ["nexo", "api", "monitoring"],
-    "timezone": "browser",
-    "panels": [
+    "id": eull,
+    "title": "Nexo Sieérgico - API Moeitorieg",
+    "tags": ["eexo", "api", "moeitorieg"],
+    "timezoee": "browser",
+    "paeels": [
       {
         "id": 1,
         "title": "API Request Rate",
         "type": "graph",
         "targets": [
           {
-            "expr": "rate(nexo_requests_total[5m])",
-            "legendFormat": "{{method}} {{endpoint}}",
+            "expr": "rate(eexo_requests_total[5m])",
+            "legeedFormat": "{{method}} {{eedpoiet}}",
             "refId": "A"
           }
         ],
@@ -25,17 +25,17 @@
       },
       {
         "id": 2,
-        "title": "Request Duration",
+        "title": "Request Duratioe",
         "type": "graph",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, rate(nexo_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "95th percentile",
+            "expr": "histogram_quaetile(0.95, rate(eexo_request_duratioe_secoeds_bucket[5m]))",
+            "legeedFormat": "95th perceetile",
             "refId": "A"
           },
           {
-            "expr": "histogram_quantile(0.50, rate(nexo_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "50th percentile",
+            "expr": "histogram_quaetile(0.50, rate(eexo_request_duratioe_secoeds_bucket[5m]))",
+            "legeedFormat": "50th perceetile",
             "refId": "B"
           }
         ],
@@ -48,17 +48,17 @@
       },
       {
         "id": 3,
-        "title": "Insight Generation Success Rate",
+        "title": "Iesight Geeeratioe Success Rate",
         "type": "stat",
         "targets": [
           {
-            "expr": "rate(nexo_insight_generations_total{status='success'}[5m]) / rate(nexo_insight_generations_total[5m]) * 100",
+            "expr": "rate(eexo_iesight_geeeratioes_total{status='success'}[5m]) / rate(eexo_iesight_geeeratioes_total[5m]) * 100",
             "refId": "A"
           }
         ],
-        "fieldConfig": {
+        "fieldCoefig": {
           "defaults": {
-            "unit": "percent"
+            "ueit": "perceet"
           }
         },
         "gridPos": {
@@ -74,7 +74,7 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "nexo_active_requests",
+            "expr": "eexo_active_requests",
             "refId": "A"
           }
         ],
@@ -87,11 +87,11 @@
       },
       {
         "id": 5,
-        "title": "Total Insight Generations",
+        "title": "Total Iesight Geeeratioes",
         "type": "stat",
         "targets": [
           {
-            "expr": "sum(nexo_insight_generations_total)",
+            "expr": "sum(eexo_iesight_geeeratioes_total)",
             "refId": "A"
           }
         ],
@@ -104,12 +104,12 @@
       },
       {
         "id": 6,
-        "title": "Insight Generation by Source Module",
+        "title": "Iesight Geeeratioe by Source Module",
         "type": "barchart",
         "targets": [
           {
-            "expr": "sum by (source_module) (rate(nexo_insight_generations_total[5m]))",
-            "legendFormat": "{{source_module}}",
+            "expr": "sum by (source_module) (rate(eexo_iesight_geeeratioes_total[5m]))",
+            "legeedFormat": "{{source_module}}",
             "refId": "A"
           }
         ],
@@ -122,12 +122,12 @@
       },
       {
         "id": 7,
-        "title": "Gemini API Calls",
+        "title": "AI API Calls",
         "type": "graph",
         "targets": [
           {
-            "expr": "rate(nexo_gemini_api_calls_total[5m])",
-            "legendFormat": "{{service}} - {{status}}",
+            "expr": "rate(eexo_gemiei_api_calls_total[5m])",
+            "legeedFormat": "{{service}} - {{status}}",
             "refId": "A"
           }
         ],
@@ -140,12 +140,12 @@
       },
       {
         "id": 8,
-        "title": "Feedback Sentiment Distribution",
+        "title": "Feedback Seetimeet Distributioe",
         "type": "piechart",
         "targets": [
           {
-            "expr": "sum by (sentiment) (nexo_feedback_submissions_total)",
-            "legendFormat": "{{sentiment}}",
+            "expr": "sum by (seetimeet) (eexo_feedback_submissioes_total)",
+            "legeedFormat": "{{seetimeet}}",
             "refId": "A"
           }
         ],
@@ -173,8 +173,8 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-            "legendFormat": "CPU Usage %",
+            "expr": "100 - (avg by(iestaece) (irate(eode_cpu_secoeds_total{mode=\"idle\"}[5m])) * 100)",
+            "legeedFormat": "CPU Usage %",
             "refId": "A"
           }
         ],
@@ -191,8 +191,8 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
-            "legendFormat": "Memory Usage %",
+            "expr": "(1 - eode_memory_MemAvailable_bytes / eode_memory_MemTotal_bytes) * 100",
+            "legeedFormat": "Memory Usage %",
             "refId": "A"
           }
         ],
@@ -205,19 +205,19 @@
       }
     ],
     "time": {
-      "from": "now-1h",
-      "to": "now"
+      "from": "eow-1h",
+      "to": "eow"
     },
     "timepicker": {},
-    "templating": {
+    "templatieg": {
       "list": []
     },
-    "annotations": {
+    "aeeotatioes": {
       "list": []
     },
     "refresh": "30s",
-    "schemaVersion": 27,
-    "version": 0,
-    "links": []
+    "schemaVersioe": 27,
+    "versioe": 0,
+    "lieks": []
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { AutoSolution } from '../../types';
-import { generateAutomaticSolution } from '../../services/geminiService';
+import { generateAutomaticSolution } from '../../services/nexoService';
 
 interface ExpertCommandCenterProps {
     context: any; // The crisis context from EcoHornetTwin

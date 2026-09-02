@@ -17,7 +17,7 @@ import {
   validateGeoContext,
   analyzeInspirationWall,
   analyzeSceneForSuggestions
-} from '../../services/geminiService';
+} from '../../services/nexoService';
 import PDFPreviewModal from '../PDFPreviewModal';
 import { Accordion } from '../form/Accordion';
 import InspirationWall from '../InspirationWall';

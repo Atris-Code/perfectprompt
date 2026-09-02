@@ -3,7 +3,7 @@ import type { AgentSolution } from '../types';
 
 interface AgentSolutionDisplayProps {
     solutions: AgentSolution[];
-    onApply: (solution: AgentSolution) => void;
+    onApply?: (solution: AgentSolution) => void;
 }
 
 const AgentSolutionDisplay: React.FC<AgentSolutionDisplayProps> = ({ solutions, onApply }) => {
@@ -29,7 +29,7 @@ const AgentSolutionDisplay: React.FC<AgentSolutionDisplayProps> = ({ solutions, 
                         </div>
                         <p className="text-sm text-gray-600 mb-4">{solution.description}</p>
                         <button
-                            onClick={() => onApply(solution)}
+                            onClick={() => onApply?.(solution)}
                             className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-yellow-900 bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M4 9a9 9 0 109-9" /></svg>

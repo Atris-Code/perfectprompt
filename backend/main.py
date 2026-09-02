@@ -20,6 +20,8 @@ from dependencies import get_current_user, require_role
 from nexo_brain import get_system_prompt
 from audit import log_action_background
 from ai_service import generate_nexo_response, generate_kairos_verdict
+from ai_router import router as ai_router, nexo_router
+from config import settings
 from prometheus_fastapi_instrumentator import Instrumentator
 
 # Create tables
@@ -31,13 +33,19 @@ app = FastAPI(title="Nexo Sinérgico Auth System")
 Instrumentator().instrument(app).expose(app)
 
 # Configure CORS
+# FIX (seguridad): orígenes explícitos desde entorno; "*" no es válido con credenciales.
+_allowed_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Proxy de IA (custodia de claves) + endpoint de dominio Nexo
+app.include_router(ai_router)
+app.include_router(nexo_router)
 
 @app.get("/")
 def root():
@@ -123,7 +131,7 @@ def generate_creative_prompt(
 ):
     """
     Prompt Creator Route.
-    Receives the full context and user prompt, and generates a creative response via Gemini.
+    Receives the full context and user prompt, and generates a creative response vía el proveedor de IA.
     """
     require_role(current_user, "Colaborador")
 
@@ -162,7 +170,7 @@ def analyze_with_nexo(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generates a response from Nexo (Gemini) based on the technical context and the user's request.
+    Generates a response from Nexo (proveedor de IA) based on the technical context and the user's request.
     Requires 'Colaborador' or 'Admin' role.
     """
     # Allow Colaborador, Admin, or Academico
@@ -342,134 +350,151 @@ def manage_user_roles(
 # --- PYROLYSIS HUB ENDPOINTS ---
 
 @app.get("/api/materials", response_model=List[MaterialSchema], tags=["Pyrolysis Hub"])
-def get_materials(db: Session = Depends(get_db)):
+def get_materials(fase: str = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
-    Devuelve la 'Tabla Periódica' de materiales disponibles para la simulación.
+    Devuelve los materiales unificados (135 registros, 3 fases de la pirólisis).
+    Filtro opcional por fase: ?fase=Sólido | Líquido | Gaseoso
+    FIX (seguridad): ahora requiere autenticación (antes era público).
     """
-    return db.query(Material).all()
+    query = db.query(Material)
+    if fase:
+        query = query.filter(Material.fase == fase)
+    return query.order_by(Material.source_id).all()
 
 @app.post("/api/simulate", response_model=SimulationResult, tags=["Pyrolysis Hub"])
-def run_simulation(request: SimulationRequest, db: Session = Depends(get_db)):
+def run_simulation(request: SimulationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
-    Motor de Simulación Avanzado (Backend).
-    Calcula rendimientos basados en cinética química y valida reglas físicas.
+    Motor de Simulación unificado (3 fases: Sólido -> Líquido + Gaseoso + Biochar).
+    Consume el esquema rico de materiales (analisisElemental / analisisInmediato),
+    con retrocompatibilidad con el esquema plano anterior (c_h_o_n).
     """
     warnings = []
-    
+
     # 1. Validación de Reglas Físicas
     if request.pyrolysisMode == "FAST" and request.residenceTime > 2.0:
-        warnings.append(f"Alerta de Proceso: La pirolisis rápida requiere tiempos < 2s (Actual: {request.residenceTime}s). Se ha ajustado el modelo a Pirolisis Lenta para mayor precisión.")
+        warnings.append(
+            f"Alerta de Proceso: la pirólisis rápida requiere tiempos < 2s (actual: {request.residenceTime}s). "
+            "Se ajustó el modelo a Pirólisis Lenta para mayor precisión."
+        )
         request.pyrolysisMode = "SLOW"
 
-    # 2. Obtener propiedades de la mezcla desde la DB
-    total_c = 0
-    total_h = 0
-    total_o = 0
-    total_n = 0
-    total_s = 0
-    total_cl = 0
-    total_ash = 0
-    total_moisture = 0
-    
-    mixture_mass = 0 # Base de cálculo 100 unidades (por los porcentajes)
+    # 2. Promedios ponderados de la mezcla (esquema unificado)
+    totals = {
+        'c': 0.0, 'h': 0.0, 'o': 0.0, 'n': 0.0, 's': 0.0, 'cl': 0.0,
+        'ash': 0.0, 'moisture': 0.0, 'volatiles': 0.0, 'fixed_c': 0.0,
+    }
+    mixture_mass = 0.0
 
     for item in request.mixture:
-        # item is {id: str, percent: float}
+        # item = {id: str, percent: float}
         material = db.query(Material).filter(Material.id == item['id']).first()
         if not material:
             continue
-            
-        percent = item['percent']
-        props = material.properties
-        
-        # Normalizar propiedades
-        c = props.get('c_h_o_n', {}).get('c', 0)
-        h = props.get('c_h_o_n', {}).get('h', 0)
-        o = props.get('c_h_o_n', {}).get('o', 0)
-        n = props.get('c_h_o_n', {}).get('n', 0)
-        s = props.get('s', 0)
-        cl = props.get('cl', 0)
-        ash = props.get('ash', 0)
-        moisture = props.get('moisture_default', 0)
+        percent = float(item.get('percent', 0))
+        props = material.properties or {}
 
-        total_c += c * percent
-        total_h += h * percent
-        total_o += o * percent
-        total_n += n * percent
-        total_s += s * percent
-        total_cl += cl * percent
-        total_ash += ash * percent
-        total_moisture += moisture * percent
+        ea = props.get('analisisElemental') or {}
+        ai = props.get('analisisInmediato') or {}
+
+        c = ea.get('carbono', 0)
+        h = ea.get('hidrogeno', 0)
+        o = ea.get('oxigeno', 0)
+        n = ea.get('nitrogeno', 0)
+        s = ea.get('azufre', 0)
+        cl = ea.get('cloro', props.get('cloro_porcentaje', props.get('cl', 0)))
+        ash = ai.get('cenizas', 0)
+        moisture = ai.get('humedad', 0)
+        volatiles = ai.get('materiaVolatil', 0)
+        fixed_c = ai.get('carbonoFijo', 0)
+
+        # Retrocompatibilidad con el esquema plano anterior
+        if not ea:
+            chon = props.get('c_h_o_n') or {}
+            c = chon.get('c', 0)
+            h = chon.get('h', 0)
+            o = chon.get('o', 0)
+            n = chon.get('n', 0)
+            s = props.get('s', 0)
+            cl = props.get('cl', 0)
+            ash = props.get('ash', 0)
+            moisture = props.get('moisture_default', 0)
+            volatiles = props.get('volatiles', 0)
+
+        totals['c'] += c * percent
+        totals['h'] += h * percent
+        totals['o'] += o * percent
+        totals['n'] += n * percent
+        totals['s'] += s * percent
+        totals['cl'] += cl * percent
+        totals['ash'] += ash * percent
+        totals['moisture'] += moisture * percent
+        totals['volatiles'] += volatiles * percent
+        totals['fixed_c'] += fixed_c * percent
         mixture_mass += percent
 
-    if mixture_mass == 0:
-        return SimulationResult(yields={"oil": 0, "char": 0, "gas": 0}, efficiency=0, warnings=["Mezcla vacía"], analysis="Sin datos")
+    if mixture_mass <= 0:
+        return SimulationResult(
+            yields={"oil": 0, "char": 0, "gas": 0},
+            efficiency=0,
+            warnings=["Mezcla vacía"],
+            analysis="Sin datos"
+        )
 
-    # Promedios ponderados
-    avg_c = total_c / mixture_mass
-    avg_h = total_h / mixture_mass
-    avg_o = total_o / mixture_mass
-    avg_n = total_n / mixture_mass
-    avg_s = total_s / mixture_mass
-    avg_cl = total_cl / mixture_mass
-    avg_ash = total_ash / mixture_mass
-    avg_moisture = total_moisture / mixture_mass
+    avg = {k: v / mixture_mass for k, v in totals.items()}
 
     # Alertas de Contaminantes
-    if avg_cl > 0.1:
-        warnings.append(f"ALERTA CRÍTICA: Contenido de Cloro ({avg_cl:.2f}%) excede el límite seguro. Riesgo de corrosión y formación de dioxinas.")
-    if avg_s > 0.5:
-        warnings.append(f"Advertencia Ambiental: Contenido de Azufre ({avg_s:.2f}%) alto. Requiere tratamiento de gases (SOx).")
-    if avg_n > 1.0:
-        warnings.append(f"Nota: Contenido de Nitrógeno ({avg_n:.2f}%) puede generar NOx.")
+    if avg['cl'] > 0.1:
+        warnings.append(f"ALERTA CRÍTICA: contenido de cloro ({avg['cl']:.2f}%) excede el límite seguro. Riesgo de corrosión y formación de dioxinas.")
+    if avg['s'] > 0.5:
+        warnings.append(f"Advertencia Ambiental: contenido de azufre ({avg['s']:.2f}%) alto. Requiere tratamiento de gases (SOx).")
+    if avg['n'] > 1.0:
+        warnings.append(f"Nota: contenido de nitrógeno ({avg['n']:.2f}%) puede generar NOx.")
 
-    # 3. Modelo Cinético Simplificado (Basado en ratios H/C y O/C)
-    # H/C alto favorece volátiles (Oil/Gas). O/C alto baja valor calorífico.
-    
-    # Base yields
-    oil_yield = 0
-    char_yield = 0
-    gas_yield = 0
-    
+    # 3. Modelo cinético por modo usando materia volátil (líquido+gas) y carbono fijo (char).
     if request.pyrolysisMode == "FAST":
-        # Maximiza Oil
-        oil_yield = 50 + (avg_h * 2) - (avg_o * 0.5) - (avg_ash * 1.5)
-        char_yield = 15 + (avg_c * 0.3) + avg_ash
+        oil_yield = 50 + (avg['volatiles'] * 0.35) - (avg['o'] * 0.35) - (avg['ash'] * 1.2)
+        char_yield = 8 + (avg['fixed_c'] * 0.55) + (avg['ash'] * 0.8)
         gas_yield = 100 - oil_yield - char_yield
     elif request.pyrolysisMode == "SLOW":
-        # Maximiza Char
-        char_yield = 35 + (avg_c * 0.5) + avg_ash
-        oil_yield = 20 + (avg_h * 1.5)
+        char_yield = 25 + (avg['fixed_c'] * 0.7) + (avg['ash'] * 0.9)
+        oil_yield = 15 + (avg['volatiles'] * 0.25)
         gas_yield = 100 - oil_yield - char_yield
-    else: # FLASH or others
-        oil_yield = 60 + (avg_h * 2)
-        char_yield = 10 + avg_ash
+    else:  # FLASH
+        oil_yield = 58 + (avg['volatiles'] * 0.35)
+        char_yield = 6 + (avg['ash'] * 0.8)
         gas_yield = 100 - oil_yield - char_yield
 
-    # Ajuste por Temperatura/Atmósfera (Simplificado)
+    # Ajuste por Atmósfera
     if request.atmosphere == "STEAM":
         gas_yield += 10
         oil_yield -= 5
         char_yield -= 5
 
-    # Normalización final a 100%
+    # Clamp y normalización final a 100%
+    oil_yield = max(0.0, oil_yield)
+    char_yield = max(0.0, char_yield)
+    gas_yield = max(0.0, gas_yield)
     total_yield = oil_yield + char_yield + gas_yield
+    if total_yield <= 0:
+        total_yield = 1.0
     oil_yield = (oil_yield / total_yield) * 100
     char_yield = (char_yield / total_yield) * 100
     gas_yield = (gas_yield / total_yield) * 100
 
     # Eficiencia
-    efficiency = 85 - (avg_moisture * 1.2)
+    efficiency = 85 - (avg['moisture'] * 1.2)
     if request.residenceTime > 10 and request.pyrolysisMode == "FAST":
-        efficiency -= 10 # Penalización por reacciones secundarias
+        efficiency -= 10
 
-    analysis = f"Mezcla rica en Carbono ({avg_c:.1f}%) e Hidrógeno ({avg_h:.1f}%). "
+    # Análisis con las tres fases
+    analysis = (f"Mezcla: C {avg['c']:.1f}%, H {avg['h']:.1f}%, O {avg['o']:.1f}%, "
+                f"volátiles {avg['volatiles']:.1f}%. ")
     if oil_yield > 50:
-        analysis += "Alto potencial para Bio-combustibles líquidos."
+        analysis += "Alto potencial para bio-aceite (fase Líquida)."
     elif char_yield > 30:
-        analysis += "Excelente para producción de Biochar y secuestro de carbono."
+        analysis += "Excelente para biochar (fase Sólida) y secuestro de carbono."
     else:
-        analysis += "Producción equilibrada de Syngas."
+        analysis += "Producción equilibrada de syngas (fase Gaseosa)."
 
     return SimulationResult(
         yields={
@@ -494,18 +519,18 @@ async def get_kairos_verdict(request: KairosRequest, current_user: User = Depend
         avg_irr=request.avg_irr,
         profitability=request.profitability
     )
-    
-    # Log the audit action
+
+    # FIX (bug doble): la firma real de log_action_background es
+    # (actor_id, action_type, target_id, details, ip_address). El código anterior
+    # pasaba kwargs inexistentes (db, user_id, action) -> TypeError.
     log_action_background(
-        db=None, # We'd need to pass db session here if we want to log to DB, but log_action_background handles it differently or we need to refactor.
-                 # For now, let's assume we just return the verdict. 
-                 # Ideally we should inject BackgroundTasks and DB session.
-        user_id=current_user.id,
-        action="KAIROS_AUDIT",
-        details=f"Audit requested for yield {request.yield_bio_oil}%"
+        actor_id=current_user.id,
+        action_type="KAIROS_AUDIT",
+        details={"yield_bio_oil": request.yield_bio_oil, "avg_irr": request.avg_irr}
     )
-    
-    return KairosResponse(verdict=verdict)
+
+    # FIX: KairosResponse exige `warnings` y `analysis` (antes se omitían -> ValidationError).
+    return KairosResponse(verdict=verdict, warnings=[], analysis=verdict)
 
 # --- ASSISTANT ENDPOINTS ---
 

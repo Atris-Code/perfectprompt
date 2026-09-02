@@ -19,7 +19,7 @@ const pdfToText = async (file: File): Promise<string> => {
 
 export const AssistantModal: React.FC<{
   onClose: () => void;
-  onCreate: (assistantData: Omit<Assistant, 'id' | 'created_at' | 'is_active'>) => void;
+  onCreate: (assistantData: Omit<Assistant, 'id' | 'created_at'>) => void;
   onUpdate: (assistantData: Assistant) => void;
   knowledgeSources: { name: string; content: string }[];
   assistantToEdit?: Assistant | null;
@@ -38,14 +38,14 @@ export const AssistantModal: React.FC<{
   useEffect(() => {
     if (assistantToEdit) {
       setName(assistantToEdit.name);
-      setRolePrompt(assistantToEdit.role_prompt);
-      setSourceType(assistantToEdit.knowledge_source_type);
+      setRolePrompt(assistantToEdit.rolePrompt);
+      setSourceType(assistantToEdit.knowledgeSource.type);
       
-      if (assistantToEdit.knowledge_source_type === 'kb' && assistantToEdit.knowledge_source_content) {
-        setSelectedKb(assistantToEdit.knowledge_source_content.split(','));
+      if (assistantToEdit.knowledgeSource.type === 'kb' && assistantToEdit.knowledgeSource.content) {
+        setSelectedKb(assistantToEdit.knowledgeSource.content.split(','));
       }
       // For 'upload', we can't easily restore files from text content, so we leave it empty or show a message.
-      if (assistantToEdit.knowledge_source_type === 'upload') {
+      if (assistantToEdit.knowledgeSource.type === 'upload') {
          setExistingFileNames(['Contenido previamente cargado']);
       }
     }
@@ -90,8 +90,8 @@ export const AssistantModal: React.FC<{
             })
           );
           knowledge_source_content = filesContent.join('\n\n');
-        } else if (isEditMode && assistantToEdit?.knowledge_source_type === 'upload') {
-          knowledge_source_content = assistantToEdit.knowledge_source_content || ''; 
+        } else if (isEditMode && assistantToEdit?.knowledgeSource.type === 'upload') {
+          knowledge_source_content = assistantToEdit.knowledgeSource.content || ''; 
         } else {
           throw new Error('Debes subir al menos un archivo.');
         }
@@ -106,17 +106,15 @@ export const AssistantModal: React.FC<{
         onUpdate({
           ...assistantToEdit,
           name,
-          role_prompt: rolePrompt,
-          knowledge_source_type: sourceType,
-          knowledge_source_content
+          rolePrompt,
+          knowledgeSource: { type: sourceType, content: knowledge_source_content }
         });
       } else {
         onCreate({ 
             name, 
-            role_prompt: rolePrompt, 
-            knowledge_source_type: sourceType, 
-            knowledge_source_content,
-            owner_titan_id: '' // Parent will fill this
+            rolePrompt, 
+            knowledgeSource: { type: sourceType, content: knowledge_source_content },
+            ownerTitanId: '' // Parent will fill this
         });
       }
 

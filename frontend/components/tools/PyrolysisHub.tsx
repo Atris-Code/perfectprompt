@@ -4,7 +4,7 @@ import type { PyrolysisMaterial, SolidMaterial, LiquidMaterial, GaseousMaterial,
 import { ContentType } from '../../types';
 import ProductYieldChart from './ProductYieldChart';
 import { Accordion } from '../form/Accordion';
-import { generateMaterialVisual, estimateThermalConductivity, generateDensificationVisualPrompt, generateNexoResponse } from '../../services/geminiService';
+import { generateMaterialVisual, estimateThermalConductivity, generateDensificationVisualPrompt, generateNexoResponse } from '../../services/nexoService';
 import { FormTextarea, FormSelect, FormInput } from '../form/FormControls';
 import MaterialComparison from './MaterialComparison';
 

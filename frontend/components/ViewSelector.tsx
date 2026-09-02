@@ -33,14 +33,12 @@ interface ViewSelectorProps {
   setView: (view: View) => void;
 }
 
-// FIX: Updated the 'key' values to match the valid SystemCategory types.
-const CATEGORY_ORDER: { key: SystemCategory, nameKey: string }[] = [
-    { key: 'Núcleo Creativo', nameKey: 'category.núcleo creativo' },
-    { key: 'Estudios y Talleres', nameKey: 'category.estudios y talleres' },
-    { key: 'Simulación Industrial', nameKey: 'category.simulación industrial' },
-    { key: 'Análisis y Datos', nameKey: 'category.análisis y datos' },
-    { key: 'Finanzas y Estrategia', nameKey: 'category.finanzas y estrategia' },
-    { key: 'Colaboración y Sistema', nameKey: 'category.colaboración y sistema' }
+// Fase 3: taxonomía de 4 zonas alineada con el Manifiesto del Nexo Sinérgico.
+const CATEGORY_ORDER: { key: SystemCategory, nameKey: string, emoji: string }[] = [
+    { key: 'Ala Analítica', nameKey: 'category.ala analítica', emoji: '🔬' },
+    { key: 'Ala Creativa', nameKey: 'category.ala creativa', emoji: '✨' },
+    { key: 'Nexo', nameKey: 'category.nexo', emoji: '🏛️' },
+    { key: 'Gobernanza y Sistema', nameKey: 'category.gobernanza y sistema', emoji: '⚖️' }
 ];
 
 export const ViewSelector: React.FC<ViewSelectorProps> = ({ currentView, setView }) => {
@@ -60,7 +58,7 @@ export const ViewSelector: React.FC<ViewSelectorProps> = ({ currentView, setView
 
         return (
           <div key={categoryInfo.key} className={index > 0 ? "mt-6 pt-4 border-t border-gray-200" : ""}>
-            <h4 className="px-3 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">{t(categoryInfo.nameKey)}</h4>
+            <h4 className="px-3 py-2 text-xs font-bold uppercase text-gray-500 tracking-wider">{categoryInfo.emoji} {t(categoryInfo.nameKey)}</h4>
             <ul className="space-y-1.5 mt-2">
               {items.map((item) => (
                 <NavItem

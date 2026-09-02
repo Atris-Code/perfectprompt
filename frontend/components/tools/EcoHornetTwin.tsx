@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 // FIX: Changed to a standard import for Chat and GenerateContentResponse to resolve a potential build issue where methods were being stripped from the Chat object, causing a 'not callable' error.
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { NexoAI, Chat, GenerateContentResponse } from "../../services/aiShim";
 import type { View, ChatMessage, AutoSolution } from '../../types';
 import { ECOHORNET_CTP_MANUAL } from '../../data/knowledgeBase';
 import { useTranslations } from '../../contexts/LanguageContext';
@@ -266,12 +266,11 @@ const SpecializedAgentChat: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+        const ai = new NexoAI({ apiKey: '' });
         const personaPrompt = PERSONA_PROMPTS[selectedPersona] || PERSONA_PROMPTS.operator;
         const systemInstruction = `Eres un asistente técnico experto en la tecnología ecoHORNET. Tu conocimiento se basa EXCLUSIVAMENTE en el siguiente documento:\n\n---\n${ECOHORNET_CTP_MANUAL}\n---\n\nTu personalidad y enfoque deben adaptarse a la audiencia seleccionada. Actualmente, tu enfoque es:\n${personaPrompt}\n\nResponde únicamente basándote en la información del documento. Si la pregunta no puede ser respondida con el documento, indícalo claramente.`;
         
         chatSessionRef.current = ai.chats.create({
-            model: 'gemini-2.5-pro',
             config: { systemInstruction },
         });
     }, [selectedPersona]);

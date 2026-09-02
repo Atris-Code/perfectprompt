@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { CharacterProfile, ChatMessage, Task, Assistant } from '../types';
 import { ContentType } from '../types';
-import { generateNarrativeAudio, generateNarrativeFields, delegateToAssistant } from '../services/geminiService';
+import { generateNarrativeAudio, generateNarrativeFields, delegateToAssistant } from '../services/nexoService';
 import { useMarco } from '../contexts/MarcoContext';
 import { DelegateTaskModal } from './DelegateTaskModal';
 

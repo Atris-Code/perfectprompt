@@ -70,7 +70,9 @@ git push -u origin main
     ALGORITHM=HS256
     ACCESS_TOKEN_EXPIRE_MINUTES=30
     
-    GEMINI_API_KEY=TU_API_KEY_DE_GOOGLE_GEMINI
+    OPENAI_API_KEY=TU_API_KEY_DE_OPENAI
+    ANTHROPIC_API_KEY=TU_API_KEY_DE_ANTHROPIC   # opcional (fallback)
+    CORS_ORIGINS=http://TU_DOMINIO,http://localhost:3000
     ```
 
 ## 3. Despliegue con Docker Compose

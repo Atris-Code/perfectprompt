@@ -4,7 +4,7 @@ import { FormSelect, FormInput, FormTextarea } from '../form/FormControls';
 import { Accordion } from '../form/Accordion';
 import type { ExperimentVariable, ExperimentConfig, PyrolysisMaterial, ExperimentResult, ExperimentResultPoint, SimulationFormData } from '../../types';
 import { runSimulation } from '../../services/simulationService';
-import { getConcilioAnalysis } from '../../services/geminiService';
+import { getConcilioAnalysis } from '../../services/nexoService';
 
 const OPTIMIZATION_GOALS = [
     { id: 'liquido', label: 'Maximizar Rendimiento de Bio-aceite (%)' },

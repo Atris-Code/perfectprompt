@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Accordion } from '../form/Accordion';
 import { FormSelect, FormTextarea, FormInput } from '../form/FormControls';
-import { generatePodcastScript, generatePodcastAudio, generateVideoStructureFromScript } from '../../services/geminiService';
+import { generatePodcastScript, generatePodcastAudio, generateVideoStructureFromScript } from '../../services/nexoService';
 import type { View, Task } from '../../types';
 import { ContentType } from '../../types';
 import { AGENTS_CODEX } from '../../data/agentsCodex';

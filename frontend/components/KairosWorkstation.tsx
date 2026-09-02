@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
-import type { Chat, GenerateContentResponse } from "@google/genai";
+import { NexoAI, Type } from "../services/aiShim";
+import type { Chat, GenerateContentResponse } from "../services/aiShim";
 import type {
     CharacterProfile,
     View,
@@ -13,7 +13,7 @@ import type {
 } from '../types';
 import { FinancialSimulator, FinancialParams, FinancialResults } from './tools/FinancialSimulator';
 import { ChatPanel } from './ChatPanel';
-import { delegateToAssistant } from '../services/geminiService';
+import { delegateToAssistant } from '../services/nexoService';
 
 // Financial Math Helpers
 const calculateIRR = (cashFlows: number[], initialGuess = 0.1, iterations = 100): number => {
@@ -142,16 +142,15 @@ export const KairosWorkstation: React.FC<KairosWorkstationProps> = ({
 
     // Initialize Chat
     useEffect(() => {
-        const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+        const ai = new NexoAI({ apiKey: '' });
         
         let systemPrompt = titan.system_prompt;
         if (titan.assistants && titan.assistants.length > 0) {
-            const assistantsList = titan.assistants.filter(a => a.is_active).map(a => `- ${a.name}: ${a.role_prompt.substring(0, 150)}...`).join('\n');
+            const assistantsList = titan.assistants.filter(a => a.status === 'ACTIVE').map(a => `- ${a.name}: ${a.rolePrompt.substring(0, 150)}...`).join('\n');
             systemPrompt += `\n\nTIENES ACCESO A LOS SIGUIENTES ASISTENTES ESPECIALIZADOS:\n${assistantsList}\n\nSi una tarea requiere conocimiento específico de uno de estos asistentes, PUEDES DELEGARLA. Para hacerlo, responde con un JSON que incluya 'accion_ui' con tipo 'DELEGAR_TAREA' y payload { asistente_nombre: string, tarea: string }.`;
         }
 
         chatSessionRef.current = ai.chats.create({
-            model: 'gemini-2.5-pro',
             config: { systemInstruction: systemPrompt },
         });
 
@@ -244,7 +243,7 @@ export const KairosWorkstation: React.FC<KairosWorkstationProps> = ({
         }
 
         if (actionId === 'send_to_governance') {
-            const governancePackage: GovernanceHandoffPackage = {
+            const governancePackage: any = {
                 handoffId: `m5-m6-${Date.now()}`,
                 timestamp: new Date().toISOString(),
                 sourceModule: 'M5_Kairos_Auditor',
@@ -286,7 +285,7 @@ export const KairosWorkstation: React.FC<KairosWorkstationProps> = ({
             };
             onNavigateToGovernance(governancePackage);
         } else if (actionId === 'send_to_optimization') {
-            const challenge: OptimizationChallengePackage = {
+            const challenge: any = {
                 handoffId: `m5-m3-${Date.now()}`,
                 timestamp: new Date().toISOString(),
                 sourceModule: 'M5_Kairos_Auditor',
@@ -334,7 +333,7 @@ export const KairosWorkstation: React.FC<KairosWorkstationProps> = ({
             
             // Re-instantiate for schema mode if needed, or just trust the chat session context + prompt.
             // For reliability, let's parse the text manually as the chat session might not enforce schema on every turn easily without config.
-            // Actually, Gemini 1.5/2.0 supports responseSchema in chat.sendMessage too in some SDK versions, but let's stick to text parsing or a separate generateContent call if we want strict JSON.
+            // El shim no soporta responseSchema en chat.sendMessage; se usa parseo de texto o generateContent para JSON estricto.
             // For now, let's assume the model returns text and we try to find JSON block.
             
             let responseText = response.text;

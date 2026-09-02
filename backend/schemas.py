@@ -77,8 +77,12 @@ class UserRoleUpdate(BaseModel):
 
 class MaterialBase(BaseModel):
     name: str
-    type: str
+    type: str = 'BIOMASS'
     state: str = 'SOLID'
+    fase: str = 'Sólido'
+    categoria: Optional[str] = None
+    origen_feedstock: Optional[str] = None
+    source_id: Optional[int] = None
     properties: Dict[str, Any]
 
 class Material(MaterialBase):

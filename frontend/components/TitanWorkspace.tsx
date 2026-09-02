@@ -3,7 +3,7 @@ import type { View, CharacterProfile, Assistant, SkillModule, Task, ChatMessage 
 import { ContentType } from '../types';
 import { AssistantModal } from './CreateAssistantModal';
 import CreateSkillModuleModal from './CreateSkillModuleModal';
-import { executeSkillModule, createAssistant, getAssistants, updateAssistant, deleteAssistant, initializeAgentChat } from '../services/geminiService';
+import { executeSkillModule, createAssistant, getAssistants, updateAssistant, deleteAssistant, initializeAgentChat } from '../services/nexoService';
 import { FormInput } from './form/FormControls';
 import { ChatPanel } from './ChatPanel';
 
@@ -117,9 +117,9 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
     const handleStartAssistantChat = (assistant: Assistant) => {
         setActiveAssistantChat(assistant);
         
-        let systemPrompt = assistant.role_prompt;
-        if (assistant.knowledge_source_content) {
-            systemPrompt += `\n\nBASE DE CONOCIMIENTO:\n${assistant.knowledge_source_content}\n\nUsa esta base de conocimiento para responder preguntas.`;
+        let systemPrompt = assistant.rolePrompt;
+        if (assistant.knowledgeSource.content) {
+            systemPrompt += `\n\nBASE DE CONOCIMIENTO:\n${assistant.knowledgeSource.content}\n\nUsa esta base de conocimiento para responder preguntas.`;
         }
 
         assistantChatSessionRef.current = initializeAgentChat(systemPrompt);
@@ -156,12 +156,14 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
         physicalAppearance: "",
         emotionalPersonality: "",
         relationalState: "",
-        linkedIn: { name: asst.name, title: "Asistente IA", about: asst.role_prompt, skills: [] },
+        linkedIn: { name: asst.name, title: "Asistente IA", about: asst.rolePrompt, skills: [] },
         mantra: "",
         imagePrompt: "",
-        system_prompt: asst.role_prompt,
+        system_prompt: asst.rolePrompt,
         audio: { description: "", voice: "", soundDesign: "" },
-        video: { description: "" }
+        video: { description: "" },
+        code: { description: "", language: "", snippet: "" },
+        subjectiveProfile: { carta_astral: [], codigo_etico: "" }
     });
 
     useEffect(() => {
@@ -292,12 +294,12 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
         setActionMenuOpenId(null);
     };
 
-    const handleSaveAssistant = async (newAssistantData: Omit<Assistant, 'id' | 'created_at' | 'is_active'>) => {
+    const handleSaveAssistant = async (newAssistantData: Omit<Assistant, 'id' | 'created_at'>) => {
         try {
             const createdAssistant = await createAssistant({
                 ...newAssistantData,
-                owner_titan_id: titan.claveName,
-                is_active: false
+                ownerTitanId: titan.claveName,
+                status: 'INACTIVE'
             });
             const updatedAssistants = [...(titan.assistants || []), createdAssistant];
             onUpdateTitan({ ...titan, assistants: updatedAssistants });
@@ -361,9 +363,9 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
         const assistant = titan.assistants?.find(a => a.id === assistantId);
         if (!assistant) return;
 
-        const newStatus = !assistant.is_active;
+        const newStatus = assistant.status !== 'ACTIVE';
         try {
-            const result = await updateAssistant(assistantId, { is_active: newStatus });
+            const result = await updateAssistant(assistantId, { status: newStatus ? 'ACTIVE' : 'INACTIVE' });
             const updatedAssistants = (titan.assistants || []).map(asst => 
                 asst.id === result.id ? result : asst
             );
@@ -541,13 +543,13 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
                                     <div key={asst.id} className="bg-gray-100 p-4 rounded-md space-y-3 border">
                                         <div>
                                             <p className="font-semibold text-lg text-gray-800">{asst.name}</p>
-                                            <p className="text-xs text-gray-500 mt-1"><strong>Rol:</strong> {asst.role_prompt.substring(0, 100)}...</p>
+                                            <p className="text-xs text-gray-500 mt-1"><strong>Rol:</strong> {asst.rolePrompt.substring(0, 100)}...</p>
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs font-bold text-gray-600">Estado:</span>
                                                  <label className="relative inline-flex items-center cursor-pointer">
-                                                    <input type="checkbox" checked={asst.is_active} onChange={() => handleToggleAssistantStatus(asst.id)} className="sr-only peer" />
+                                                    <input type="checkbox" checked={asst.status === 'ACTIVE'} onChange={() => handleToggleAssistantStatus(asst.id)} className="sr-only peer" />
                                                     <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                                                 </label>
                                             </div>

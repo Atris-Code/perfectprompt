@@ -1,11 +1,9 @@
 
 export const es = {
-    'category.núcleo creativo': 'Núcleo Creativo',
-    'category.estudios y talleres': 'Estudios y Talleres',
-    'category.simulación industrial': 'Simulación Industrial',
-    'category.análisis y datos': 'Análisis y Datos',
-    'category.finanzas y estrategia': 'Finanzas y Estrategia',
-    'category.colaboración y sistema': 'Colaboración y Sistema',
+    'category.ala analítica': 'Ala Analítica',
+    'category.ala creativa': 'Ala Creativa',
+    'category.nexo': 'Nexo',
+    'category.gobernanza y sistema': 'Gobernanza y Sistema',
     'view.creator': 'Creador de Prompts',
     'view.library': 'Biblioteca de Prompts',
     'view.pro': 'IA Pro Studio (Imagen)',
@@ -628,12 +626,10 @@ export const es = {
 };
 
 export const en = {
-    'category.núcleo creativo': 'Creative Core',
-    'category.estudios y talleres': 'Studios & Workshops',
-    'category.simulación industrial': 'Industrial Simulation',
-    'category.análisis y datos': 'Analysis & Data',
-    'category.finanzas y estrategia': 'Finance & Strategy',
-    'category.colaboración y sistema': 'Collaboration & System',
+    'category.ala analítica': 'Analytical Wing',
+    'category.ala creativa': 'Creative Wing',
+    'category.nexo': 'Nexus',
+    'category.gobernanza y sistema': 'Governance & System',
     'view.creator': 'Prompt Creator',
     'view.library': 'Prompt Library',
     'view.pro': 'AI Pro Studio (Image)',

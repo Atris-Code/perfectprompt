@@ -3,7 +3,7 @@ import { Accordion } from '../form/Accordion';
 import { FormInput, FormTextarea, FormSelect } from '../form/FormControls';
 import type { Task } from '../../types';
 import { ContentType, EventType } from '../../types';
-import { performDueDiligenceAnalysis } from '../../services/geminiService';
+import { performDueDiligenceAnalysis } from '../../services/nexoService';
 
 const SECTIONS = [
     { id: 'deconstruction', title: 'Sección 1: Deconstrucción de la Propuesta Central', questions: ['¿Cuál es la propuesta de valor declarada?', '¿Cuáles son los activos/pasivos (tangibles e intangibles)?', '¿Qué validación de producto existe?', '¿Cuál es el plan de inversión y asignación presupuestaria propuesto?', '¿Qué estructura de retorno se ofrece?', '¿Cuáles son las debilidades no declaradas o supuestos implícitos (especialmente financieros/estratégicos)?'] },

@@ -10,7 +10,7 @@
  * 3. Guion de video para Reels/YouTube Shorts
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { generateText, generateJSON } from './aiProvider';
 import { VISUAL_CORE_SYSTEM_PROMPT, BRAND_COLORS } from './visualCore';
 import type { ContentTemplate } from './contentAutomation';
 
@@ -48,25 +48,19 @@ export interface MultimediaContent {
  * 
  * @param analysisText - Texto del análisis de fortalezas/debilidades
  * @param template - Template seleccionado automáticamente
- * @param apiKey - API key de Gemini
+ * @param apiKey - API key del proveedor de IA
  * @returns Contenido multimedia en 3 formatos
  */
 export async function generateMultimediaContent(
     analysisText: string,
     template: ContentTemplate,
-    apiKey: string
+    _apiKey: string
 ): Promise<MultimediaContent> {
-    if (!apiKey) {
-        throw new Error('API Key no configurada');
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
-
     // Generar los 3 formatos en paralelo
     const [textDocument, infographicPrompt, videoScript] = await Promise.all([
-        generateTechnicalDocument(analysisText, template, ai),
+        generateTechnicalDocument(analysisText, template),
         generateInfographicPrompt(analysisText, template),
-        generateVideoScript(analysisText, template, ai)
+        generateVideoScript(analysisText, template)
     ]);
 
     return {
@@ -81,8 +75,7 @@ export async function generateMultimediaContent(
  */
 async function generateTechnicalDocument(
     analysisText: string,
-    template: ContentTemplate,
-    ai: GoogleGenAI
+    template: ContentTemplate
 ): Promise<string> {
     const prompt = `
 Actúa como redactor técnico especializado en tecnologías de valorización de residuos.
@@ -128,12 +121,7 @@ INSTRUCCIONES ADICIONALES:
 `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: prompt
-        });
-
-        return response.text;
+        return await generateText(prompt);
     } catch (error) {
         console.error('Error generando documento técnico:', error);
         throw new Error('No se pudo generar el documento técnico');
@@ -212,8 +200,7 @@ ${template.emphasis}
  */
 async function generateVideoScript(
     analysisText: string,
-    template: ContentTemplate,
-    ai: GoogleGenAI
+    template: ContentTemplate
 ): Promise<VideoScript> {
     const prompt = `
 Genera un guion para un video de 60 segundos para YouTube Shorts/Instagram Reels.
@@ -271,21 +258,7 @@ INSTRUCCIONES:
 `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json"
-            }
-        });
-
-        let scriptData;
-        try {
-            scriptData = JSON.parse(response.text);
-        } catch (e) {
-            console.error("Failed to parse video script JSON:", response.text);
-            throw new Error("Invalid JSON response from Gemini");
-        }
+        const scriptData = await generateJSON<VideoScript>(prompt, {});
 
         // Validate structure
         if (!scriptData.scenes || !Array.isArray(scriptData.scenes)) {

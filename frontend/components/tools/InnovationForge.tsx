@@ -13,7 +13,7 @@ interface InnovationForgeProps {
     coPresets: CoPreset[];
     reactors: ReactorState[];
     addEvent: (message: string) => void;
-    apiKey: string; // API key for Gemini simulations
+    apiKey: string; // API key del proveedor de IA
     onSaveTask?: (task: Task) => void; // Callback to save tasks to Task Manager
 }
 
@@ -140,7 +140,7 @@ const DEFAULT_REACTORS = [
     { id: 'R-006', status: 'off' },
 ] as any;
 
-export const InnovationForge: React.FC<InnovationForgeProps> = ({ coPresets, reactors, addEvent, apiKey }) => {
+export const InnovationForge: React.FC<InnovationForgeProps> = ({ coPresets, reactors, addEvent, apiKey, onSaveTask }) => {
     // Use fallback data if props are empty
     const activePresets = coPresets?.length > 0 ? coPresets : DEFAULT_PRESETS;
     const activeReactors = reactors?.length > 0 ? reactors : DEFAULT_REACTORS;

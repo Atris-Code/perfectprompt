@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Assistant } from '../types';
 import { FormSelect, FormTextarea } from './form/FormControls';
-import { delegateToAssistant } from '../services/geminiService';
+import { delegateToAssistant } from '../services/nexoService';
 
 interface DelegateTaskModalProps {
   assistants: Assistant[];

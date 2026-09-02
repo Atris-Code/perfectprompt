@@ -199,7 +199,7 @@ const InfographicTab: React.FC<{ prompt: string; onCopy: (text: string) => void 
 /**
  * Tab de guion de video
  */
-const VideoTab: React.FC<{ script: ReturnType<typeof MultimediaContentPanel>['content']['videoScript']; onCopy: (text: string) => void }> = ({
+const VideoTab: React.FC<{ script: any; onCopy: (text: string) => void }> = ({
     script,
     onCopy
 }) => {

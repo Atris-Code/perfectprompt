@@ -14,7 +14,7 @@ import {
     generateNarrativeConsistencyFeedback,
     generateTextualCoherenceFeedback,
     generateAgentSolutions,
-} from '../services/geminiService';
+} from '../services/nexoService';
 import { useTranslations } from '../contexts/LanguageContext';
 import { ContentType } from '../types';
 import type { FormData, NarrativeConsistencyFeedback, TextualNarrativeCoherence, AgentSolution, Task, StyleDefinition, View, ChronosState, STOState } from '../types';

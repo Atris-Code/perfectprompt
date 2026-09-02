@@ -36,7 +36,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
           <section>
             <h4 className="font-bold text-lg text-blue-700 mb-2">Propósito de la Aplicación</h4>
             <p className="text-gray-700 leading-relaxed">
-              El <strong>Creador de Prompt Perfecto</strong> es una superherramienta creativa diseñada para ayudarte a construir prompts de alta calidad para cualquier IA generativa. Utilizando el poder de la <strong>API de Gemini de Google</strong>, esta aplicación refina tus ideas y las convierte en instrucciones claras y detalladas, asegurando que obtengas los mejores resultados posibles de los modelos de IA.
+              El <strong>Creador de Prompt Perfecto</strong> es una superherramienta creativa diseñada para ayudarte a construir prompts de alta calidad para cualquier IA generativa. Utilizando el poder de la <strong>motor de IA (OpenAI/Anthropic)</strong>, esta aplicación refina tus ideas y las convierte en instrucciones claras y detalladas, asegurando que obtengas los mejores resultados posibles de los modelos de IA.
             </p>
           </section>
 

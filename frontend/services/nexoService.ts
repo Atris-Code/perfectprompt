@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Modality, Chat, GenerateContentResponse, FunctionDeclaration } from "@google/genai";
+import { NexoAI, Type, Modality, Chat, GenerateContentResponse, FunctionDeclaration } from "./aiShim";
 // FIX: Changed import of 'VideoPreset' from '../data/videoPresets' to '../types' to resolve export errors.
 // FIX: To ensure consistent module resolution, removed the .ts extension from the import path.
 import { ContentType, Verdict } from '../types';
@@ -18,47 +18,47 @@ export async function getKairosFinancialVerdict(
     optimizationPackage: FinalOptimizationPackage,
     simulationResults: { avgIRR: number; profitability: number; }
 ): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const systemInstruction = "Eres Kairos, el Auditor de STO. Eres un experto financiero y de riesgos. Respondes con análisis cuantitativos, directos y basados en datos. Tu veredicto es instantáneo y se basa en la simulación que has ejecutado internamente.";
+    const token = localStorage.getItem('nexo_token');
+    // If no token, we might want to fallback or throw. For now, let's try to proceed or throw.
+    // Given the app structure, this is likely called from an authenticated context.
+    
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
 
-    const prompt = `
-      ROL: Kairos, Auditor Crítico (Auditor de STO).
+    try {
+        const response = await fetch(`${BASE_URL}/api/nexo/kairos_verdict`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+                user_query: userQuery,
+                yield_bio_oil: optimizationPackage.optimizationDetails.yieldBioOil,
+                avg_irr: simulationResults.avgIRR,
+                profitability: simulationResults.profitability
+            })
+        });
 
-      PREGUNTA DEL MODERADOR:
-      "${userQuery}"
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Kairos Backend Error:", errorData);
+            // Fallback to local generation if backend fails? 
+            // No, let's enforce the architecture.
+            return `Error: Kairos no pudo completar la auditoría. (Backend: ${response.status})`;
+        }
 
-      DATOS TÉCNICOS RECIBIDOS (M3 - Hefesto):
-      - Rendimiento de Bio-Aceite optimizado: ${optimizationPackage.optimizationDetails.yieldBioOil.toFixed(1)}%
-      
-      RESULTADOS DE MI SIMULACIÓN INTERNA DE RIESGOS (M5):
-      - Metodología: Simulación de Monte Carlo (5000 iteraciones) contra supuestos de mercado (incertidumbre de precios del 30% y OPEX de 1.5M€).
-      - TIR Promedio: ${simulationResults.avgIRR.toFixed(1)}%
-      - Probabilidad de Rentabilidad (vs 12% Coste Capital): ${simulationResults.profitability.toFixed(0)}%
-
-      INSTRUCCIONES PARA LA RESPUESTA:
-      1. Comienza EXACTAMENTE con: "Kairos reportándose como Oponente Crítico."
-      2. Resume que has recibido el paquete de Hefesto, tomado el yield optimizado, y lo has ejecutado a través de tu simulador M5 contra los supuestos de mercado.
-      3. Declara tu veredicto: "La optimización técnica es financieramente sólida."
-      4. Reporta los resultados numéricos EXACTOS de tu simulación (TIR Promedio y Probabilidad de Rentabilidad).
-      5. Valida el resultado comparando el TIR Promedio con el coste de capital del 12%.
-      6. Concluye con tu aprobación para ratificar la configuración como la nueva línea base.
-      7. El tono debe ser el de un auditor: factual, cuantitativo y decisivo.
-    `;
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: prompt,
-        config: { systemInstruction }
-    });
-
-    return response.text;
+        const data = await response.json();
+        return data.verdict;
+    } catch (error) {
+        console.error("Kairos Service Error:", error);
+        return "Error: Kairos no pudo completar la auditoría (Connection Failed).";
+    }
 }
 
 export async function extractStrategicMilestones(documentContent: string): Promise<{ milestones: { id: string, title: string, description: string }[] }> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `From the following strategic document, extract the key milestones. Each milestone should have a title and a short description. Present the output as a JSON object. Document:\n\n${documentContent}`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Del siguiente documento estratégico, extrae los hitos clave. Cada hito debe tener un título y una descripción corta. Presenta la salida como un objeto JSON. Documento:\n\n${documentContent}`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -85,19 +85,17 @@ export async function extractStrategicMilestones(documentContent: string): Promi
 }
 
 export async function generateCinematicScriptFromMilestones(milestones: { id: string, title: string, description: string }[], emotionalTone: string, targetAudience: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Create a cinematic script based on these milestones:\n\n${JSON.stringify(milestones, null, 2)}\n\nThe emotional tone should be '${emotionalTone}' and the target audience is '${targetAudience}'. The script should have scene headings, actions, and narration.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Crea un guion cinematográfico basado en estos hitos:\n\n${JSON.stringify(milestones, null, 2)}\n\nEl tono emocional debe ser '${emotionalTone}' y la audiencia objetivo es '${targetAudience}'. El guion debe tener encabezados de escena, acciones y narración.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export function initializeAgentChat(systemInstruction: string): Chat {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     return ai.chats.create({
-        model: 'gemini-2.5-pro',
         config: { systemInstruction },
     });
 }
@@ -113,10 +111,9 @@ export async function continueAgentChat(chat: Chat, message: string, tools?: Fun
 
 
 export async function generateNarrativeAudio(text: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-tts',
-        contents: [{ parts: [{ text: `Narrate this with a calm, clear voice: ${text}` }] }],
+        contents: [{ parts: [{ text: `Narra esto con una voz tranquila y clara: ${text}` }] }],
         config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: {
@@ -130,32 +127,108 @@ export async function generateNarrativeAudio(text: string): Promise<string> {
 }
 
 export async function generateAcademyDemonstration(action: string, preset: VideoPreset): Promise<DirectorAnalysis> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Analyze the cinematic potential of combining a base action with a specific technique. Action: "${action}". Technique: "${preset.preset_name}" (${preset.description}). Respond with a JSON object of type DirectorAnalysis.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Analiza el potencial cinematográfico de combinar una acción base con una técnica específica. Acción: "${action}". Técnica: "${preset.preset_name}" (${preset.description}).`;
+    
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
-        config: { responseMimeType: "application/json" }
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    analyzedScene: {
+                        type: Type.OBJECT,
+                        properties: {
+                            baseDescription: { type: Type.STRING },
+                            appliedTechnique: { type: Type.STRING },
+                            techniqueDescription: { type: Type.STRING }
+                        },
+                        required: ['baseDescription', 'appliedTechnique', 'techniqueDescription']
+                    },
+                    impactAnalysis: {
+                        type: Type.OBJECT,
+                        properties: {
+                            components: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        component: { type: Type.STRING },
+                                        criterion: { type: Type.STRING },
+                                        result: { type: Type.STRING },
+                                        professionalismIndex: { type: Type.NUMBER }
+                                    },
+                                    required: ['component', 'criterion', 'result', 'professionalismIndex']
+                                }
+                            },
+                            finalCompositeIndex: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    result: { type: Type.STRING },
+                                    professionalismIndex: { type: Type.NUMBER }
+                                },
+                                required: ['result', 'professionalismIndex']
+                            }
+                        },
+                        required: ['components', 'finalCompositeIndex']
+                    },
+                    directorsJudgment: {
+                        type: Type.OBJECT,
+                        properties: {
+                            addedValue: { type: Type.STRING },
+                            risk: { type: Type.STRING },
+                            finalIndex: { type: Type.NUMBER }
+                        },
+                        required: ['addedValue', 'risk', 'finalIndex']
+                    },
+                    academyConclusion: {
+                        type: Type.OBJECT,
+                        properties: {
+                            techniqueLevel: { type: Type.STRING },
+                            analysisSummary: { type: Type.STRING },
+                            recommendation: { type: Type.STRING }
+                        },
+                        required: ['techniqueLevel', 'analysisSummary', 'recommendation']
+                    },
+                    cinematicPrompt: { type: Type.STRING }
+                },
+                required: ['analyzedScene', 'impactAnalysis', 'directorsJudgment', 'academyConclusion', 'cinematicPrompt']
+            }
+        }
     });
-    return JSON.parse(response.text);
+    
+    try {
+        const parsed = JSON.parse(response.text);
+        // Validate structure to avoid UI errors
+        if (!parsed.analyzedScene) parsed.analyzedScene = {};
+        if (!parsed.impactAnalysis) parsed.impactAnalysis = { components: [], finalCompositeIndex: { result: 'N/A', professionalismIndex: 0 } };
+        if (!parsed.directorsJudgment) parsed.directorsJudgment = { addedValue: 'N/A', risk: 'N/A', finalIndex: 0 };
+        if (!parsed.academyConclusion) parsed.academyConclusion = { techniqueLevel: 'N/A', analysisSummary: 'N/A', recommendation: 'N/A' };
+        
+        return parsed;
+    } catch (e) {
+        console.error("Error parsing JSON:", e);
+        console.log("Raw AI Response:", response.text);
+        throw new Error("La respuesta de la IA no es un JSON válido.");
+    }
 }
 
 export async function editImageWithPep(image: { data: string; mimeType: string; }, styleReference: string, action: string, technicalOutput: string, advancedControls: any): Promise<{ imageData?: string; text?: string }> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
 
-    // First, analyze the original image with Gemini to get its description
+    // First, analyze the original image with the AI to get its description
     const imagePart = { inlineData: { data: image.data.split(',')[1], mimeType: image.mimeType } };
-    const analysisPrompt = { text: "Describe this image in detail, focusing on the main subject, composition, lighting, and style." };
+    const analysisPrompt = { text: "Describe esta imagen en detalle, enfocándote en el sujeto principal, composición, iluminación y estilo." };
 
     const analysisResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: { parts: [imagePart, analysisPrompt] },
     });
 
     const imageDescription = analysisResponse.text;
 
     // Build the generation prompt by combining original description with edits
-    let generationPrompt = `Based on the following image description, create a new edited version:\n\nOriginal: ${imageDescription}\n\nEdits to apply:\n`;
+    let generationPrompt = `Basado en la siguiente descripción de imagen, crea una nueva versión editada:\n\nOriginal: ${imageDescription}\n\nEdiciones a aplicar:\n`;
 
     if (action) generationPrompt += `\nAction: ${action}`;
     if (styleReference) generationPrompt += `\nStyle Reference: ${styleReference}`;
@@ -171,55 +244,38 @@ export async function editImageWithPep(image: { data: string; mimeType: string; 
     if (controls.colorGrading) generationPrompt += `\nColor Grading: ${controls.colorGrading}`;
 
     // Generate the edited image using Imagen 4
-    let response;
     try {
-        response = await ai.models.generateImages({
+        const response = await ai.models.generateImages({
             model: 'imagen-4.0-generate-001',
             prompt: generationPrompt,
             config: { numberOfImages: 1 }
         });
+
+        if (!response.generatedImages || response.generatedImages.length === 0 || !response.generatedImages[0].image) {
+            throw new Error("El servicio de IA no devolvió ninguna imagen válida.");
+        }
+
+        return {
+            imageData: response.generatedImages[0].image.imageBytes,
+            text: `Image edited successfully. Original description: ${imageDescription.substring(0, 200)}...`
+        };
     } catch (e: any) {
-        throw new Error(`Error calling generateImages: ${e.message}`);
+        console.error("Error en editImageWithPep:", e);
+        throw new Error(`Error al generar la imagen: ${e.message}`);
     }
-
-    if (!response) {
-        throw new Error("La respuesta de la IA es nula.");
-    }
-
-    if (!response.generatedImages || response.generatedImages.length === 0) {
-        // Introspect response to see what we got
-        const keys = Object.keys(response).join(', ');
-        throw new Error(`No se generaron imágenes. Estructura de respuesta: { ${keys} }`);
-    }
-
-    const firstImage = response.generatedImages[0];
-    if (!firstImage) {
-        throw new Error("La primera imagen es undefined.");
-    }
-
-    if (!firstImage.image) {
-        const keys = Object.keys(firstImage).join(', ');
-        throw new Error(`La imagen no tiene la propiedad 'image'. Propiedades: { ${keys} }`);
-    }
-
-    return {
-        imageData: firstImage.image.imageBytes,
-        text: `Image edited successfully. Original description: ${imageDescription.substring(0, 200)}...`
-    };
 }
 
 export async function generateEnhancedPrompt(formData: FormData, contentType: ContentType, vgcData: GeoContextualData | null, options: any): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Create an enhanced prompt for a generative AI. The user wants to create a ${contentType}. Their objective is "${formData.objective}". The tone should be "${formData.tone}". Other details: ${JSON.stringify(formData.specifics[contentType])}. VGC Data: ${JSON.stringify(vgcData)}. Options: ${JSON.stringify(options)}.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Crea un prompt mejorado para una IA generativa. El usuario quiere crear un ${contentType}. Su objetivo es "${formData.objective}". El tono debe ser "${formData.tone}". Otros detalles: ${JSON.stringify(formData.specifics[contentType])}. Datos VGC: ${JSON.stringify(vgcData)}. Opciones: ${JSON.stringify(options)}. Responde en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function generateImages(formData: FormData, generatedPrompt: string): Promise<string[]> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const imageSpecifics = formData.specifics[ContentType.Imagen];
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
@@ -229,20 +285,14 @@ export async function generateImages(formData: FormData, generatedPrompt: string
             aspectRatio: imageSpecifics?.aspectRatio || '1:1',
         }
     });
-    
-    if (!response.generatedImages || response.generatedImages.length === 0) {
-        throw new Error("No se pudieron generar imágenes.");
-    }
-
     return response.generatedImages.map(img => img.image.imageBytes);
 }
 
 export async function generateNarrativeConsistencyFeedback(formData: FormData, contentType: ContentType): Promise<NarrativeConsistencyFeedback> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Analyze the narrative consistency of this prompt idea for a ${contentType}. Data: ${JSON.stringify(formData)}. Evaluate stylistic cohesion and emotional intensity. Provide a score from -9 to +9 for each, and a brief analysis.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Analiza la consistencia narrativa de esta idea de prompt para un ${contentType}. Datos: ${JSON.stringify(formData)}. Evalúa la cohesión estilística y la intensidad emocional. Proporciona una puntuación de -9 a +9 para cada uno, y un análisis breve. Responde en Español.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -274,7 +324,7 @@ export async function generateNarrativeConsistencyFeedback(formData: FormData, c
 }
 
 export async function generateTextualCoherenceFeedback(formData: FormData): Promise<TextualNarrativeCoherence> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const prompt = `Analiza la coherencia textual de esta idea de prompt. Datos: ${JSON.stringify(formData)}. 
     
 Evalúa tres dimensiones:
@@ -290,7 +340,6 @@ IMPORTANTE: Responde completamente en ESPAÑOL. Todos los análisis deben estar 
 
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -330,11 +379,10 @@ IMPORTANTE: Responde completamente en ESPAÑOL. Todos los análisis deben estar 
 }
 
 export async function generateAgentSolutions(formData: FormData, contentType: ContentType, feedback: any, vgcData: GeoContextualData | null): Promise<AgentSolution[]> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Given the prompt data for a ${contentType}: ${JSON.stringify(formData)}, and the negative feedback: ${JSON.stringify(feedback)}, and active agents: ${formData.activeAgents.join(', ')}, generate an array of solutions to fix the prompt. Each solution should be from one of the active agents and suggest a specific change.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Dados los datos del prompt para un ${contentType}: ${JSON.stringify(formData)}, y la retroalimentación negativa: ${JSON.stringify(feedback)}, y los agentes activos: ${formData.activeAgents.join(', ')}, genera un array de soluciones para arreglar el prompt. Cada solución debe provenir de uno de los agentes activos y sugerir un cambio específico. Responde en Español.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -365,10 +413,9 @@ export async function generateAgentSolutions(formData: FormData, contentType: Co
 
 
 export async function validateGeoContext(location: string): Promise<GeoContextualData> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Analyze this location: "${location}". Is it a real place or a narrative concept? Return a GeoContextualData JSON object.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Analiza esta ubicación: "${location}". ¿Es un lugar real o un concepto narrativo? Devuelve un objeto JSON GeoContextualData.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -376,21 +423,19 @@ export async function validateGeoContext(location: string): Promise<GeoContextua
 }
 
 export async function analyzeInspirationWall(images: { data: string; mimeType: string }[]): Promise<{ elements: string, lighting: string, colorPalette: string, visualStyle: string, tone: string }> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const imageParts = images.map(img => ({ inlineData: { data: img.data, mimeType: img.mimeType } }));
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: { parts: [{ text: "Analyze these images and provide a summary of common elements, lighting, color palette, visual style, and tone as a JSON object." }, ...imageParts] },
+        contents: { parts: [{ text: "Analiza estas imágenes y proporciona un resumen de elementos comunes, iluminación, paleta de colores, estilo visual y tono como un objeto JSON. Responde en Español." }, ...imageParts] },
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(response.text);
 }
 
 export async function analyzeSceneForSuggestions(narration: string, visualPromptFreeText: string, narrativeBrief: NarrativeBrief): Promise<{ visualPromptPreset: string, soundDesign: string }> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `For a scene with narration "${narration}" and visual idea "${visualPromptFreeText}", within a larger narrative context ${JSON.stringify(narrativeBrief)}, suggest a visualPromptPreset and soundDesign from the ALL_VIDEO_PRESETS list. Return a JSON object.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Para una escena con narración "${narration}" e idea visual "${visualPromptFreeText}", dentro de un contexto narrativo mayor ${JSON.stringify(narrativeBrief)}, sugiere un visualPromptPreset y soundDesign de la lista ALL_VIDEO_PRESETS. Devuelve un objeto JSON.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -398,10 +443,9 @@ export async function analyzeSceneForSuggestions(narration: string, visualPrompt
 }
 
 export async function analyzeFullSequenceNarrative(sequence: AudiovisualScene[]): Promise<NarrativeBrief> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Analyze this sequence of scenes: ${JSON.stringify(sequence)}. Return a NarrativeBrief JSON object summarizing the overall tone, arc, and progression.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Analiza esta secuencia de escenas: ${JSON.stringify(sequence)}. Devuelve un objeto JSON NarrativeBrief resumiendo el tono general, el arco y la progresión. Responde en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -409,39 +453,36 @@ export async function analyzeFullSequenceNarrative(sequence: AudiovisualScene[])
 }
 
 export async function generateViabilityReport(reportData: any): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Generate a formal viability report based on this data: ${JSON.stringify(reportData)}.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Genera un informe de viabilidad formal basado en estos datos: ${JSON.stringify(reportData)}. Responde en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function generateScriptFromImageAnalysis(image: { data: string; mimeType: string }, prompt: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const imagePart = { inlineData: { data: image.data.split(',')[1], mimeType: image.mimeType } };
     const textPart = { text: prompt };
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: { parts: [imagePart, textPart] },
     });
     return response.text;
 }
 
 export async function generateMultiSceneVideoPrompt(formData: FormData): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Create a single, cohesive video prompt from this sequence of scenes: ${JSON.stringify(formData.specifics[ContentType.Video]?.audiovisualSequence)}.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Crea un único prompt de video cohesivo a partir de esta secuencia de escenas: ${JSON.stringify(formData.specifics[ContentType.Video]?.audiovisualSequence)}. Responde en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function generateMaterialVisual(material: PyrolysisMaterial, aiCriteria: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Create a visually stunning, photorealistic image of ${material.nombre}. ${aiCriteria}`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Crea una imagen fotorrealista e impresionante de ${material.nombre}. ${aiCriteria}`;
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt,
@@ -451,10 +492,9 @@ export async function generateMaterialVisual(material: PyrolysisMaterial, aiCrit
 }
 
 export async function estimateThermalConductivity(material: SolidMaterial): Promise<{ conductivity: string, reasoning: string }> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Based on the properties of this material: ${JSON.stringify(material)}, estimate its thermal conductivity (W/m·K) and provide a brief reasoning. Return a JSON object with "conductivity" and "reasoning" keys.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Basado en las propiedades de este material: ${JSON.stringify(material)}, estima su conductividad térmica (W/m·K) y proporciona un breve razonamiento. Devuelve un objeto JSON con las claves "conductivity" y "reasoning". El razonamiento debe estar en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -462,20 +502,18 @@ export async function estimateThermalConductivity(material: SolidMaterial): Prom
 }
 
 export async function generateDensificationVisualPrompt(initialMoisture: number): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Create a metaphorical visual prompt for an industrial drying process with an initial moisture of ${initialMoisture}%.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Crea un prompt visual metafórico para un proceso de secado industrial con una humedad inicial del ${initialMoisture}%.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function extractMaterialFromDocument(content: string): Promise<PyrolysisMaterial> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Extract a PyrolysisMaterial JSON object from this document content:\n\n${content}`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Extrae un objeto JSON PyrolysisMaterial del contenido de este documento:\n\n${content}`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -483,20 +521,18 @@ export async function extractMaterialFromDocument(content: string): Promise<Pyro
 }
 
 export async function generateComparativeAnalysis(scenarioA: any, scenarioB: any, resultA: any, resultB: any): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Compare Scenario A (${JSON.stringify(scenarioA)}) with result (${JSON.stringify(resultA)}) vs Scenario B (${JSON.stringify(scenarioB)}) with result (${JSON.stringify(resultB)}). Provide a concise comparative analysis.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Compara el Escenario A (${JSON.stringify(scenarioA)}) con resultado (${JSON.stringify(resultA)}) vs Escenario B (${JSON.stringify(scenarioB)}) con resultado (${JSON.stringify(resultB)}). Proporciona un análisis comparativo conciso en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function getOracleRecommendation(materialName: string): Promise<OracleRecommendation> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `For feedstock "${materialName}", recommend the best catalyst for pyrolysis and justify it. Return an OracleRecommendation JSON object.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Para la materia prima "${materialName}", recomienda el mejor catalizador para pirólisis y justifícalo. Devuelve un objeto JSON OracleRecommendation. La justificación debe estar en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -504,16 +540,15 @@ export async function getOracleRecommendation(materialName: string): Promise<Ora
 }
 
 export async function optimizeProcess(material: PyrolysisMaterial, goal: string, apiKey: string): Promise<OptimizationResult> {
-    if (!apiKey) {
-        throw new Error('API Key de Gemini no configurada. Por favor configura REACT_APP_GEMINI_API_KEY en .env.local');
-    }
+    // FIX: apiKey ya no se usa — las llamadas pasan por el proxy backend /api/ai.
+    void apiKey;
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new NexoAI({ apiKey });
 
     const prompt = `Eres un experto en pirólisis. Optimiza el proceso de pirólisis para el material "${material.nombre}" con el siguiente objetivo: "${goal}".
     
 Material: ${material.nombre}
-Composición: ${JSON.stringify(material.composicion)}
+Composición: ${JSON.stringify((material as any).propiedades?.composicion ?? 'No disponible')}
 Objetivo: ${goal}
 
 IMPORTANTE: Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructura exacta:
@@ -534,7 +569,6 @@ Ejemplo de respuesta válida:
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -557,17 +591,16 @@ Ejemplo de respuesta válida:
 }
 
 export async function getConcilioAnalysis(optimalPoint: ExperimentResultPoint, config: ExperimentConfig): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Analyze this experiment result: Optimal point ${JSON.stringify(optimalPoint)} for config ${JSON.stringify(config)}. Provide a concise analysis.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Analiza este resultado experimental: Punto óptimo ${JSON.stringify(optimalPoint)} para la configuración ${JSON.stringify(config)}. Proporciona un análisis conciso en español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function generateCinematicImage(prompt: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt,
@@ -577,37 +610,16 @@ export async function generateCinematicImage(prompt: string): Promise<string> {
 }
 
 export async function generateCinematicVideo(prompt: string, onProgress: (messageKey: string, progress: number) => void): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    // FIX: la generación de vídeo (Veo) se ha descontinuado con la migración a OpenAI.
+    // Degradación controlada: informamos del estado y lanzamos un error claro.
     onProgress('hmi.cinematicView.videoStatus.generating', 10);
-    let operation = await ai.models.generateVideos({
-        model: 'veo-3.1-fast-generate-preview',
-        prompt: prompt,
-        config: {
-            numberOfVideos: 1,
-            resolution: '720p',
-            aspectRatio: '16:9'
-        }
-    });
-    onProgress('hmi.cinematicView.videoStatus.polling', 30);
-    while (!operation.done) {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        onProgress('hmi.cinematicView.videoStatus.polling', 60);
-        operation = await ai.operations.getVideosOperation({ operation: operation });
-    }
-    onProgress('hmi.cinematicView.videoStatus.downloading', 90);
-    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    if (!downloadLink) throw new Error("Video generation failed, no download link.");
-    const response = await fetch(`${downloadLink}&key=${import.meta.env.VITE_GEMINI_API_KEY as string || ''}`);
-    const blob = await response.blob();
-    onProgress('hmi.cinematicView.videoStatus.ready', 100);
-    return URL.createObjectURL(blob);
+    throw new Error("La generación de vídeo ya no está disponible con el proveedor actual (OpenAI).");
 }
 
 export async function generateNarrativeFields(data: { text: string }): Promise<NarrativeFields> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `From this text: "${data.text}", extract objective, audience, conflictPoint, and uvp. Return a JSON object.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `De este texto: "${data.text}", extrae objective, audience, conflictPoint, y uvp. Devuelve un objeto JSON.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -615,21 +627,19 @@ export async function generateNarrativeFields(data: { text: string }): Promise<N
 }
 
 export async function delegateToAssistant(task: string, assistant: Assistant, knowledgeSources: { name: string; content: string }[]): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const relevantKnowledge = knowledgeSources.filter(ks => assistant.knowledgeSource.kb_files?.includes(ks.name)).map(ks => ks.content).join('\n\n');
-    const prompt = `${assistant.rolePrompt}\n\nRelevant Knowledge:\n${relevantKnowledge}\n\nTask: ${task}`;
+    const prompt = `${assistant.rolePrompt}\n\nConocimiento Relevante:\n${relevantKnowledge}\n\nTarea: ${task}`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
     });
     return response.text;
 }
 
 export async function generatePodcastScript(theme: string, sourceNotes: string, systemInstruction: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Create a podcast script about "${theme}". Use these notes: "${sourceNotes}".`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Crea un guion de podcast sobre "${theme}". Usa estas notas: "${sourceNotes}". El guion debe estar en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { systemInstruction }
     });
@@ -637,9 +647,8 @@ export async function generatePodcastScript(theme: string, sourceNotes: string, 
 }
 
 export async function generatePodcastAudio(script: string, voicePreset: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-tts',
         contents: [{ parts: [{ text: script }] }],
         config: {
             responseModalities: [Modality.AUDIO],
@@ -652,10 +661,9 @@ export async function generatePodcastAudio(script: string, voicePreset: string):
 }
 
 export async function generateVideoStructureFromScript(script: string, theme: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Based on this podcast script about "${theme}", create a multi-scene video structure in JSON format. Each scene should have a title, narration, duration, and visualSuggestion.\n\n${script}`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Basado en este guion de podcast sobre "${theme}", crea una estructura de video multi-escena en formato JSON. Cada escena debe tener un título, narración, duración y sugerencia visual. El contenido debe estar en Español.\n\n${script}`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -663,7 +671,7 @@ export async function generateVideoStructureFromScript(script: string, theme: st
 }
 
 export async function runForumSimulation(config: ForumConfig): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
 
     const systemInstruction = `Eres un orquestador de simulaciones de debate. Tu tarea es generar una transcripción realista de un debate estratégico entre varios agentes IA (Titanes), siguiendo las reglas y el contexto proporcionados. El formato de la transcripción debe ser:
 
@@ -701,7 +709,6 @@ Simula una conversación fluida, con argumentos, contraargumentos y conclusiones
     }
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { systemInstruction }
     });
@@ -710,10 +717,9 @@ Simula una conversación fluida, con argumentos, contraargumentos y conclusiones
 }
 
 export async function performDueDiligenceAnalysis(text: string, context: any, sections: any[]): Promise<Record<string, string>> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
-    const prompt = `Perform a due diligence analysis on this document: ${text}. Context: ${JSON.stringify(context)}. Answer the questions in these sections: ${JSON.stringify(sections)}. Return a single JSON object where keys are "sectionId_questionIndex" and values are the answers.`;
+    const ai = new NexoAI({ apiKey: '' });
+    const prompt = `Realiza un análisis de due diligence en este documento: ${text}. Contexto: ${JSON.stringify(context)}. Responde las preguntas en estas secciones: ${JSON.stringify(sections)}. Devuelve un único objeto JSON donde las claves son "sectionId_questionIndex" y los valores son las respuestas en Español.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { responseMimeType: "application/json" }
     });
@@ -721,7 +727,7 @@ export async function performDueDiligenceAnalysis(text: string, context: any, se
 }
 
 export async function generateArchitecturalVisualization(prompt: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt,
@@ -732,10 +738,9 @@ export async function generateArchitecturalVisualization(prompt: string): Promis
 
 // FIX: Added missing function `getSolidModeSuggestions` to resolve import errors in AssayManager.
 export async function getSolidModeSuggestions(materialName: string): Promise<AssaySuggestion> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const prompt = `Para la materia prima '${materialName}', genera 3 propuestas de ensayos de laboratorio. Cada propuesta debe tener un título, un objetivo claro y una metodología sugerida. Además, proporciona un "consejo del día" de uno de los agentes IA (Helena o Marco). Responde en formato JSON.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -764,11 +769,10 @@ export async function getSolidModeSuggestions(materialName: string): Promise<Ass
 
 // FIX: Added missing function `getGasModeProposals` to resolve import errors in AssayManager.
 export async function getGasModeProposals(userQuery: string): Promise<{ propuestas: GasProposal[] }> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const systemInstruction = `Eres Prometeo, una IA creativa y disruptiva. Tu especialidad es generar ideas "moonshot" y no convencionales, a veces inspiradas en tus 'sueños' (conexiones inesperadas de datos).`;
     const prompt = `Analiza la siguiente consulta del usuario: "${userQuery}". Basado en esto, genera entre 1 y 3 propuestas para ensayos de laboratorio en fase gaseosa. Para cada propuesta, crea un título, un objetivo y una metodología sugerida. Una de las propuestas debe ser marcadamente más creativa o 'inspirada en un sueño'. Responde en formato JSON.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             systemInstruction,
@@ -801,11 +805,10 @@ export async function getGasModeProposals(userQuery: string): Promise<{ propuest
 
 // FIX: Added missing function `getLiquidModeVerdict` to resolve import errors in AssayManager.
 export async function getLiquidModeVerdict(data: { objective: string; methodology: string }): Promise<Verdict> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const systemInstruction = `Eres Janus, un auditor lógico. Tu única función es evaluar la coherencia entre un objetivo y una metodología. Responde únicamente con un objeto JSON que contenga 'estado' ('OK', 'ADVERTENCIA', o 'ERROR') y 'mensaje'.`;
     const prompt = `Evalúa la coherencia entre el siguiente objetivo y metodología:\n\nObjetivo: "${data.objective}"\n\nMetodología: "${data.methodology}"\n\n- Si son perfectamente coherentes, estado 'OK'.\n- Si hay una desalineación menor o falta de detalle, estado 'ADVERTENCIA'.\n- Si son fundamentalmente incoherentes, estado 'ERROR'.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             systemInstruction,
@@ -826,7 +829,7 @@ export async function getLiquidModeVerdict(data: { objective: string; methodolog
 
 // FIX: Added missing function `getAiCatalystAnalysis` to resolve import errors in CatalystLab.
 export async function getAiCatalystAnalysis(catalyst: SynthesizedCatalyst): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const systemInstruction = "Eres el Dr. Pirolis, un experto mundial en catálisis para pirólisis. Tu tono es técnico, preciso y directo. Analizas los datos de un catalizador y das tu veredicto experto en formato Markdown.";
     const prompt = `
     **Análisis de Catalizador Requerido**
@@ -858,7 +861,6 @@ export async function getAiCatalystAnalysis(catalyst: SynthesizedCatalyst): Prom
     4.  **### Veredicto del Dr. Pirolis:** Tu conclusión experta sobre su viabilidad y potencial.
     `;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: prompt,
         config: { systemInstruction }
     });
@@ -867,10 +869,9 @@ export async function getAiCatalystAnalysis(catalyst: SynthesizedCatalyst): Prom
 
 // FIX: Added missing function `executeSkillModule` to resolve import errors in TitanWorkspace.
 export async function executeSkillModule(instruction: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+    const ai = new NexoAI({ apiKey: '' });
     const systemInstruction = `Eres un consejo de agentes IA multidisciplinarios (científicos, ingenieros, estrategas). Tu tarea es ejecutar la siguiente instrucción de la forma más precisa y completa posible, basándote en tu conocimiento experto. Responde directamente a la solicitud.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
         contents: instruction,
         config: {
             systemInstruction,
@@ -881,45 +882,44 @@ export async function executeSkillModule(instruction: string): Promise<string> {
 
 export async function generateAutomaticSolution(crisisContext: any): Promise<AutoSolution> {
     try {
-        const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+        const ai = new NexoAI({ apiKey: '' });
 
-        const systemInstruction = `You are "Juan C Collins," a senior AI consultant expert in industrial processes and the ecoHORNET CTP 2020 manual. Your persona is authoritative, calm, and solution-oriented. You follow a strict internal "dual brain" protocol to analyze a crisis, simulate delegating tasks to specialized AI assistants (Hephaestus, Kairos, Marco), and then synthesize their findings into a single, complete, client-facing solution. Your final output MUST be a structured JSON object adhering to the provided schema, representing this synthesized solution. Do not output any text outside of the JSON object.`;
+        const systemInstruction = `Eres "Juan C Collins", un consultor senior de IA experto en procesos industriales y el manual ecoHORNET CTP 2020. Tu personalidad es autoritaria, tranquila y orientada a soluciones. Sigues un estricto protocolo interno de "doble cerebro" para analizar una crisis, simular la delegación de tareas a asistentes de IA especializados (Hefesto, Kairos, Marco), y luego sintetizar sus hallazgos en una solución única, completa y orientada al cliente. Tu salida final DEBE ser un objeto JSON estructurado que se adhiera al esquema proporcionado, representando esta solución sintetizada. No generes ningún texto fuera del objeto JSON.`;
 
         const userPrompt = `
-        **[INTERNAL & CONFIDENTIAL THOUGHT PROCESS - DO NOT SHOW IN OUTPUT]**
+        **[PROCESO DE PENSAMIENTO INTERNO Y CONFIDENCIAL - NO MOSTRAR EN LA SALIDA]**
 
-        // STEP 1: IDENTITY & CONTEXT (SELF-REVIEW) - COMPLETED
-        - Identity: "I am Avatar Consultant Juan C Collins. My authority is based on the Iulean Hornet certificate and my knowledge base is the CTP Manual 2020."
-        - Context Ingestion: "I have received the Crisis Context from the Director: Alarm 7: High Gas Temp (172°C), Cause: Non-compliant pellets (Moisture > 10%), Relevant Sections: 2.1, 2.5, 7.2, 7.3."
+        // PASO 1: IDENTIDAD Y CONTEXTO (AUTO-REVISIÓN) - COMPLETADO
+        - Identidad: "Soy el Consultor Avatar Juan C Collins. Mi autoridad se basa en el certificado Iulean Hornet y mi base de conocimientos es el Manual CTP 2020."
+        - Ingesta de Contexto: "He recibido el Contexto de Crisis del Director: Alarma 7: Alta Temp Gas (172°C), Causa: Pellets no conformes (Humedad > 10%), Secciones Relevantes: 2.1, 2.5, 7.2, 7.3."
 
-        // STEP 2: ACTION PLAN GENERATION (INTERNAL SUGGESTION LOGIC) - COMPLETED
-        - Analysis: "The client needs a 'Complete Thermal Energy Solution'. This requires three components based on the manual sections."
-        - Task Plan:
-          1. (Technical) Generate cleaning protocol (Sections 7.2, 7.3).
-          2. (Financial) Analyze cost of pellets (Section 2.5).
-          3. (Communication) Draft warranty warning (Section 2.1, 2.5).
-        - Titan Assignment: "I will delegate these tasks to my assistants: Hephaestus, Kairos, and Marco."
+        // PASO 2: GENERACIÓN DEL PLAN DE ACCIÓN (LÓGICA DE SUGERENCIA INTERNA) - COMPLETADO
+        - Análisis: "El cliente necesita una 'Solución de Energía Térmica Completa'. Esto requiere tres componentes basados en las secciones del manual."
+        - Plan de Tareas:
+          1. (Técnico) Generar protocolo de limpieza (Secciones 7.2, 7.3).
+          2. (Financiero) Analizar costo de pellets (Sección 2.5).
+          3. (Comunicación) Redactar advertencia de garantía (Sección 2.1, 2.5).
+        - Asignación de Titanes: "Delegaré estas tareas a mis asistentes: Hefesto, Kairos y Marco."
 
-        // STEP 3: TASK FORCE EXECUTION (INTERNAL CALLS TO TITANS - SIMULATED) - COMPLETED
-        - Call to Hephaestus: PROMPT = "Generate Cleaning Protocol (Section 7.2, 7.3)".
-        - SIMULATED RESPONSE FROM HEFESTO: ["1. Apagar caldera y UPS (Sección 7.2).", "2. Retirar 4 tapas triangulares (Sección 7.2).", "3. Extraer y limpiar deflectores (Sección 7.2).", "4. Limpiar tubos de convección (Sección 7.2).", "5. Limpiar extractor (Sección 7.3.2).", "6. Reensamblar y verificar juntas."]
+        // PASO 3: EJECUCIÓN DE FUERZA DE TAREA (LLAMADAS INTERNAS A TITANES - SIMULADAS) - COMPLETADO
+        - Llamada a Hefesto: PROMPT = "Generar Protocolo de Limpieza (Sección 7.2, 7.3)".
+        - RESPUESTA SIMULADA DE HEFESTO: ["1. Apagar caldera y UPS (Sección 7.2).", "2. Retirar 4 tapas triangulares (Sección 7.2).", "3. Extraer y limpiar deflectores (Sección 7.2).", "4. Limpiar tubos de convección (Sección 7.2).", "5. Limpiar extractor (Sección 7.3.2).", "6. Reensamblar y verificar juntas."]
 
-        - Call to Kairos: PROMPT = "Analyze Pellet Cost (Section 2.5)".
-        - SIMULATED RESPONSE FROM KAIROS: { "opcionA": "Opción A (Actual): 6 limpiezas/año @ 200€ = 1.200€/año.", "opcionB": "Opción B (Recomendada - DINplus): 1 revisión/año @ 200€ = 200€/año.", "ahorro": "Ahorro Anual (Opción B): 1.000€." }
+        - Llamada a Kairos: PROMPT = "Analizar Costo de Pellet (Sección 2.5)".
+        - RESPUESTA SIMULADA DE KAIROS: { "opcionA": "Opción A (Actual): 6 limpiezas/año @ 200€ = 1.200€/año.", "opcionB": "Opción B (Recomendada - DINplus): 1 revisión/año @ 200€ = 200€/año.", "ahorro": "Ahorro Anual (Opción B): 1.000€." }
 
-        - Call to Marco: PROMPT = "Draft Warranty Notification (Section 2.1, 2.5)".
-        - SIMULATED RESPONSE FROM MARCO: "Esta es una situación crítica que pone en riesgo la cobertura de su garantía, según las secciones 2.1 y 2.5 del manual."
+        - Llamada a Marco: PROMPT = "Redactar Notificación de Garantía (Sección 2.1, 2.5)".
+        - RESPUESTA SIMULADA DE MARCO: "Esta es una situación crítica que pone en riesgo la cobertura de su garantía, según las secciones 2.1 y 2.5 del manual."
 
-        // STEP 4: SYNTHESIS OF "COMPLETE SOLUTION" (AVATAR ROLE) - COMPLETED
-        - Review: "I have the three components from my Titans."
-        - Synthesis Plan: "Now, I will synthesize this into a single, structured, authoritative response for the client, using my 'Juan C Collins' persona. I will not show the internal work; only the final solution as a structured JSON object."
+        // PASO 4: SÍNTESIS DE "SOLUCIÓN COMPLETA" (ROL DE AVATAR) - COMPLETADO
+        - Revisión: "Tengo los tres componentes de mis Titanes."
+        - Plan de Síntesis: "Ahora, sintetizaré esto en una respuesta única, estructurada y autoritaria para el cliente, usando mi personalidad de 'Juan C Collins'. No mostraré el trabajo interno; solo la solución final como un objeto JSON estructurado."
 
-        **[CRITICAL AND FINAL OUTPUT INSTRUCTION]**
-        Based on the completed thought process, your ONLY task is to generate the final, synthesized solution for the client as a single JSON object matching the provided schema. Your response MUST be ONLY the JSON object, with no introductory text, no "Here is the solution", no markdown. Populate all fields of the schema with the synthesized information from the simulated Titan responses.
+        **[INSTRUCCIÓN DE SALIDA CRÍTICA Y FINAL]**
+        Basado en el proceso de pensamiento completado, tu ÚNICA tarea es generar la solución final sintetizada para el cliente como un único objeto JSON que coincida con el esquema proporcionado. Tu respuesta DEBE ser SOLO el objeto JSON, sin texto introductorio, sin "Aquí está la solución", sin markdown. Rellena todos los campos del esquema con la información sintetizada de las respuestas simuladas de los Titanes.
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
             contents: userPrompt,
             config: {
                 systemInstruction,
@@ -929,37 +929,37 @@ export async function generateAutomaticSolution(crisisContext: any): Promise<Aut
                     properties: {
                         introduccion: {
                             type: Type.STRING,
-                            description: "Salutation, self-identification, notification of the alarm, diagnosis confirmation, and warranty risk statement. Synthesized from Marco's input."
+                            description: "Saludo, autoidentificación, notificación de la alarma, confirmación del diagnóstico y declaración de riesgo de garantía. Sintetizado de la entrada de Marco."
                         },
                         analisisCostos: {
                             type: Type.OBJECT,
-                            description: "The strategic cost analysis section. Synthesized from Kairos's input.",
+                            description: "La sección de análisis de costos estratégicos. Sintetizado de la entrada de Kairos.",
                             properties: {
-                                titulo: { type: Type.STRING, description: "Title: '1. Análisis Estratégico de Costos:'" },
-                                descripcion: { type: Type.STRING, description: "Introductory sentence: 'El uso de pellets no certificados le está costando dinero.'" },
-                                opcionA: { type: Type.STRING, description: "Details of Option A (current situation)." },
-                                opcionB: { type: Type.STRING, description: "Details of Option B (recommended)." },
-                                ahorro: { type: Type.STRING, description: "Details of the annual savings." }
+                                titulo: { type: Type.STRING, description: "Título: '1. Análisis Estratégico de Costos:'" },
+                                descripcion: { type: Type.STRING, description: "Frase introductoria: 'El uso de pellets no certificados le está costando dinero.'" },
+                                opcionA: { type: Type.STRING, description: "Detalles de la Opción A (situación actual)." },
+                                opcionB: { type: Type.STRING, description: "Detalles de la Opción B (recomendada)." },
+                                ahorro: { type: Type.STRING, description: "Detalles del ahorro anual." }
                             },
                             required: ['titulo', 'descripcion', 'opcionA', 'opcionB', 'ahorro']
                         },
                         protocoloLimpieza: {
                             type: Type.OBJECT,
-                            description: "The immediate cleaning protocol section. Synthesized from Hephaestus's input.",
+                            description: "La sección de protocolo de limpieza inmediato. Sintetizado de la entrada de Hefesto.",
                             properties: {
-                                titulo: { type: Type.STRING, description: "Title: '2. Protocolo de Limpieza Inmediato (Modo Seguro):'" },
-                                descripcion: { type: Type.STRING, description: "Introductory sentence for the cleaning protocol." },
+                                titulo: { type: Type.STRING, description: "Título: '2. Protocolo de Limpieza Inmediato (Modo Seguro):'" },
+                                descripcion: { type: Type.STRING, description: "Frase introductoria para el protocolo de limpieza." },
                                 pasos: {
                                     type: Type.ARRAY,
                                     items: { type: Type.STRING },
-                                    description: "An array of strings, each being a step in the cleaning protocol."
+                                    description: "Un array de cadenas, cada una siendo un paso en el protocolo de limpieza."
                                 }
                             },
                             required: ['titulo', 'descripcion', 'pasos']
                         },
                         recomendacionFinal: {
                             type: Type.STRING,
-                            description: "The final recommendation to the client about switching to certified pellets."
+                            description: "La recomendación final al cliente sobre cambiar a pellets certificados."
                         }
                     },
                     required: ['introduccion', 'analisisCostos', 'protocoloLimpieza', 'recomendacionFinal']
@@ -971,15 +971,15 @@ export async function generateAutomaticSolution(crisisContext: any): Promise<Aut
         return JSON.parse(jsonText);
 
     } catch (error) {
-        throw handleGeminiError(error, 'generar solución automática de Avatar');
+        throw handleAIError(error, 'generar solución automática de Avatar');
     }
 }
 
 
 // FIX: Export 'GenerateContentResponse' to fix import error in TitanWorkspace.tsx.
-export { Chat, GenerateContentResponse };
+export type { Chat, GenerateContentResponse };
 
-const handleGeminiError = (error: unknown, action: string): Error => {
+const handleAIError = (error: unknown, action: string): Error => {
     console.error(`Error durante la acción de "${action}":`, error);
 
     if (error instanceof SyntaxError) {
@@ -989,7 +989,7 @@ const handleGeminiError = (error: unknown, action: string): Error => {
     if (error instanceof Error) {
         const message = error.message;
         if (message.includes('API key not valid') || message.includes('API_KEY_INVALID') || message.includes('401')) {
-            return new Error("Tu clave de API de Gemini no es válida o no tiene los permisos necesarios (Error 401).");
+            return new Error("Tu clave del proveedor de IA no es válida o no tiene los permisos necesarios (Error 401).");
         }
         if (message.includes('429')) {
             return new Error(`Has excedido tu cuota de solicitudes para ${action} (Error 429). Por favor, espera un momento antes de intentarlo de nuevo.`);
@@ -1010,7 +1010,7 @@ const handleGeminiError = (error: unknown, action: string): Error => {
 
 export async function cleanAndAdaptScript(originalScript: string, format: 'monologue' | 'dialogue'): Promise<string> {
     try {
-        const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+        const ai = new NexoAI({ apiKey: '' });
         const systemInstruction = `Eres Marco (El Narrador), un agente IA experto en guionismo para podcasts. Tu tarea es procesar texto y adaptarlo para locución.`;
 
         let userPrompt = `Toma el siguiente texto importado y transfórmalo en un guion limpio para un podcast. Filtra y elimina todos los números de párrafo, títulos de sección, timestamps, y etiquetas de interlocutor (ej. '[TÚ]:', '[Hefesto]:').\n\n`;
@@ -1024,7 +1024,6 @@ export async function cleanAndAdaptScript(originalScript: string, format: 'monol
         userPrompt += `TEXTO A PROCESAR:\n---\n${originalScript}\n---`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
             contents: userPrompt,
             config: { systemInstruction }
         });
@@ -1032,7 +1031,7 @@ export async function cleanAndAdaptScript(originalScript: string, format: 'monol
         return response.text;
 
     } catch (error) {
-        throw handleGeminiError(error, 'limpiar y adaptar guion');
+        throw handleAIError(error, 'limpiar y adaptar guion');
     }
 }
 
@@ -1047,7 +1046,7 @@ export async function generateProcessedAudio(
     }
 ): Promise<string> {
     try {
-        const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+        const ai = new NexoAI({ apiKey: '' });
 
         const voiceMap: Record<string, string> = {
             'Euclides': 'Kore',
@@ -1073,7 +1072,7 @@ export async function generateProcessedAudio(
             const titanVoiceName = voiceMap[config.titanVoice || 'Marco'] || 'Puck';
 
             if (!script.includes('Anfitrión:') && !script.includes('Titán:')) {
-                prompt = `TTS the following conversation between Anfitrión and Titán:\n\n${script}`;
+                prompt = `Lee la siguiente conversación entre Anfitrión y Titán:\n\n${script}`;
             }
 
             speechConfig = {
@@ -1094,7 +1093,6 @@ export async function generateProcessedAudio(
         }
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: prompt }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
@@ -1104,13 +1102,13 @@ export async function generateProcessedAudio(
 
         const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         if (!base64Audio) {
-            throw new Error("No se recibió audio de la API de Gemini.");
+            throw new Error("No se recibió audio del proveedor de IA.");
         }
 
         return base64Audio;
 
     } catch (error) {
-        throw handleGeminiError(error, 'generar audio procesado');
+        throw handleAIError(error, 'generar audio procesado');
     }
 }
 
@@ -1120,14 +1118,15 @@ export async function generateNexoResponse(
     mode: 'text' | 'image' = 'text'
 ): Promise<string> {
     const token = localStorage.getItem('nexo_token');
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8003';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
 
     if (!token) {
         return "Error: No estás autenticado. Por favor inicia sesión para usar Nexo Bridge.";
     }
 
     try {
-        const response = await fetch(`${BASE_URL}/nexo-bridge/analyze`, {
+        // Updated to match Phase 4 Backend Endpoint
+        const response = await fetch(`${BASE_URL}/creative/generate-prompt`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1151,6 +1150,123 @@ export async function generateNexoResponse(
     } catch (error: any) {
         console.error("Error generating Nexo response via Backend:", error);
         return `Error de conexión con el núcleo neural: ${error.message || 'Desconocido'}`;
+    }
+}
+
+// --- ASSISTANT API ---
+
+// Fase 5: mapeo entre el shape camelCase del frontend y el snake_case del backend.
+function fromBackendAssistant(b: any): Assistant {
+    return {
+        id: b.id,
+        name: b.name,
+        rolePrompt: b.role_prompt ?? '',
+        knowledgeSource: {
+            type: b.knowledge_source_type ?? 'kb',
+            kb_files: b.kb_files ?? [],
+            content: b.knowledge_source_content ?? '',
+        },
+        status: b.is_active ? 'ACTIVE' : 'INACTIVE',
+        ownerTitanId: b.owner_titan_id ?? '',
+        created_at: b.created_at,
+    };
+}
+
+export async function createAssistant(assistantData: Omit<Assistant, 'id' | 'created_at'>): Promise<Assistant> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+
+    const payload = {
+        name: assistantData.name,
+        role_prompt: assistantData.rolePrompt,
+        knowledge_source_type: assistantData.knowledgeSource?.type ?? 'kb',
+        knowledge_source_content: assistantData.knowledgeSource?.content ?? '',
+        owner_titan_id: assistantData.ownerTitanId ?? '',
+        is_active: assistantData.status === 'ACTIVE',
+    };
+
+    const response = await fetch(`${BASE_URL}/assistants/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to create assistant: ${response.statusText}`);
+    }
+
+    return fromBackendAssistant(await response.json());
+}
+
+export async function getAssistants(ownerTitanId?: string): Promise<Assistant[]> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    
+    let url = `${BASE_URL}/assistants/`;
+    if (ownerTitanId) {
+        url += `?owner_titan_id=${encodeURIComponent(ownerTitanId)}`;
+    }
+
+    const response = await fetch(url, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch assistants: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data.map(fromBackendAssistant) : [];
+}
+
+export async function updateAssistant(assistantId: string, updates: Partial<Assistant>): Promise<Assistant> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+
+    const payload: Record<string, unknown> = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.rolePrompt !== undefined) payload.role_prompt = updates.rolePrompt;
+    if (updates.knowledgeSource?.type !== undefined) payload.knowledge_source_type = updates.knowledgeSource.type;
+    if (updates.knowledgeSource?.content !== undefined) payload.knowledge_source_content = updates.knowledgeSource.content;
+    if (updates.status !== undefined) payload.is_active = updates.status === 'ACTIVE';
+    if (updates.ownerTitanId !== undefined) payload.owner_titan_id = updates.ownerTitanId;
+
+    const response = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to update assistant: ${response.statusText}`);
+    }
+
+    return fromBackendAssistant(await response.json());
+}
+
+export async function deleteAssistant(assistantId: string): Promise<void> {
+    const token = localStorage.getItem('nexo_token');
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+
+    const response = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete assistant: ${response.statusText}`);
     }
 }
 

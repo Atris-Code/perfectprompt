@@ -86,9 +86,16 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
-    name = Column(String, nullable=False)
-    type = Column(String, nullable=False)  # BIOMASS, POLYMER, SLUDGE, TIRE
+    # Fase 2 (unificación de datos): identificador numérico estable (1-135) del dataset.
+    source_id = Column(Integer, unique=True, nullable=True, index=True)
+    name = Column(String, nullable=False)          # nombre del material
+    fase = Column(String, nullable=False, default='Sólido', index=True)  # Sólido | Líquido | Gaseoso
+    categoria = Column(String, nullable=True)
+    origen_feedstock = Column(String, nullable=True)  # para Líquido/Gaseoso (producto de un feedstock)
+    # Retrocompatibilidad con el esquema anterior (BIOMASS/POLYMER/SLUDGE/TIRE).
+    type = Column(String, nullable=False, default='BIOMASS')
     state = Column(String, default='SOLID')
+    # Esquema rico por fase (composicion, analisisElemental, analisisInmediato, etc.).
     properties = Column(JSON, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

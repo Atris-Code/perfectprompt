@@ -16,7 +16,10 @@ pydantic-settings==2.1.0
 email-validator==2.1.0.post1
 
 # AI APIs
-google-generativeai>=0.8.3
+# OpenAI (primario) + Anthropic Claude (fallback).
+# Las claves viven en el servidor; el navegador ya no las expone.
+openai>=1.40.0
+anthropic>=0.34.0
 
 # Cloud Storage
 cloudinary==1.36.0

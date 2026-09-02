@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PEP_PRESETS } from '../data/pepPresets';
 import { FormTextarea, FormSelect, FormInput } from './form/FormControls';
-import { editImageWithPep } from '../services/geminiService';
+import { editImageWithPep } from '../services/nexoService';
 import { Accordion } from './form/Accordion';
 import type { StyleDefinition } from '../types';
 import SavePepStyleModal from './SavePepStyleModal';

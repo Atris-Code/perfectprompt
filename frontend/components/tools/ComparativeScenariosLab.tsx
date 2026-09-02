@@ -3,7 +3,7 @@ import { ContentType } from '../../types';
 import type { Task, SimulationFormData, SimulationResult, PyrolysisMaterial, Catalyst, TechnicalRiskPackage } from '../../types';
 import { SIMULATION_ENGINE, PYROLYSIS_MATERIALS } from '../../data/pyrolysisMaterials';
 import { runMonteCarloSimulation } from '../../services/simulationService';
-import { generateComparativeAnalysis } from '../../services/geminiService';
+import { generateComparativeAnalysis } from '../../services/nexoService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Accordion } from '../form/Accordion';
 import { FormInput, FormSelect } from '../form/FormControls';

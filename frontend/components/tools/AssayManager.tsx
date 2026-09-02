@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { ContentType } from '../../types';
 import type { Task, View, AssayDetails, Verdict, AssaySuggestion, GasProposal } from '../../types';
 import { PYROLYSIS_MATERIALS } from '../../data/pyrolysisMaterials';
-import { getSolidModeSuggestions, getGasModeProposals, getLiquidModeVerdict } from '../../services/geminiService';
+import { getSolidModeSuggestions, getGasModeProposals, getLiquidModeVerdict } from '../../services/nexoService';
 import { FormSelect, FormTextarea } from '../form/FormControls';
 import { useTranslations } from '../../contexts/LanguageContext';
 

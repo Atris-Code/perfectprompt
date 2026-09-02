@@ -4,7 +4,7 @@ import type { View, VulcanoState, Task, UtilityDutyType, VulcanoMachineStatus } 
 import { ContentType } from '../../types';
 import { useTranslations } from '../../contexts/LanguageContext';
 import { Accordion } from '../form/Accordion';
-import { generateCinematicImage, generateCinematicVideo } from '../../services/geminiService';
+import { generateCinematicImage, generateCinematicVideo } from '../../services/nexoService';
 
 
 interface VulcanoProps {

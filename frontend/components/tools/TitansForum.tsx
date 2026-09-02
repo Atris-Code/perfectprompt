@@ -4,7 +4,7 @@ import { ContentType } from '../../types';
 import { AGENTS_CODEX } from '../../data/agentsCodex';
 import { Accordion } from '../form/Accordion';
 import { FormInput, FormTextarea, FormSelect } from '../form/FormControls';
-import { runForumSimulation } from '../../services/geminiService';
+import { runForumSimulation } from '../../services/nexoService';
 import { useTranslations } from '../../contexts/LanguageContext';
 
 const TITAN_OPTIONS = AGENTS_CODEX.map(agent => ({

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { SynthesizedCatalyst } from '../../types';
-import { getAiCatalystAnalysis } from '../../services/geminiService';
+import { getAiCatalystAnalysis } from '../../services/nexoService';
 import { TaskManager, type COPRESETPayload } from '../../services/taskManager';
 import { Accordion } from '../form/Accordion';
 import { FormInput } from '../form/FormControls';

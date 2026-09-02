@@ -5,7 +5,7 @@ import { ContentType } from '../../types';
 import { useUtilityCosts } from '../../contexts/UtilityCostContext';
 import { PRESETS } from '../../data/presets';
 import { useTranslations } from '../../contexts/LanguageContext';
-import { generateCinematicImage, generateCinematicVideo } from '../../services/geminiService';
+import { generateCinematicImage, generateCinematicVideo } from '../../services/nexoService';
 import { InsightCard, InsightCardData } from '../nexo/InsightCard';
 
 // --- Reusable UI Components (for consistency) ---

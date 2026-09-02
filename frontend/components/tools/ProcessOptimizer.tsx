@@ -3,7 +3,7 @@ import { PYROLYSIS_MATERIALS } from '../../data/pyrolysisMaterials';
 // FIX: Added Task and ContentType imports for saving task functionality.
 import type { PyrolysisMaterial, OptimizationResult, SimulationResult, SimulationFormData, Task, OptimizationChallengePackage } from '../../types';
 import { ContentType } from '../../types';
-import { optimizeProcess } from '../../services/geminiService';
+import { optimizeProcess } from '../../services/nexoService';
 import { runSimulation } from '../../services/simulationService';
 
 const KpiCard: React.FC<{ title: string; value: string; unit: string; }> = ({ title, value, unit }) => (
@@ -77,7 +77,7 @@ const OPTIMIZATION_GOALS = [
 interface ProcessOptimizerProps {
     onSaveTask: (task: Task) => void;
     challengePackage: OptimizationChallengePackage | null;
-    apiKey: string; // Gemini API key passed from parent
+    apiKey: string; // API key del proveedor de IA
     initialMaterialId?: number | null;
 }
 

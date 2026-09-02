@@ -13,7 +13,7 @@ import { ALL_DOCUMENTARY_PRESETS, CLASSIFIED_DOCUMENTARY_PRESETS } from '../../d
 import { CLASSIFIED_GENRE_PRESETS } from '../../data/genrePresets';
 import { SceneEditor } from './SceneEditor';
 import { AGENTS_CODEX } from '../../data/agentsCodex';
-import { generateProcessedAudio, cleanAndAdaptScript, extractStrategicMilestones, generateCinematicScriptFromMilestones } from '../../services/geminiService';
+import { generateProcessedAudio, cleanAndAdaptScript, extractStrategicMilestones, generateCinematicScriptFromMilestones } from '../../services/nexoService';
 
 // --- Audio Helper Functions ---
 function decode(base64: string) {

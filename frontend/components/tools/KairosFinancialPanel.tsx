@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { NexoAI, Type } from "../../services/aiShim";
 import type { View, Task, OptimizationChallengePackage } from '../../types';
 import { ContentType, EventType } from '../../types';
 import { FormInput } from '../form/FormControls';
@@ -169,7 +169,7 @@ export const KairosFinancialPanel: React.FC<KairosFinancialPanelProps> = ({ setV
             setResults(simulationResults);
 
             // 2. Generate AI Verdict
-            const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+            const ai = new NexoAI({ apiKey: '' });
             const systemInstruction = `Eres Kairos, un Auditor de Viabilidad de STO (Security Token Offering). Eres analítico, data-driven y ofreces diagnósticos estratégicos claros en español.`;
 
             const isViable = simulationResults.profitability > 50 && (simulationResults.avgTir * 100) > (COST_OF_CAPITAL * 100);
@@ -191,7 +191,6 @@ export const KairosFinancialPanel: React.FC<KairosFinancialPanelProps> = ({ setV
             `;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-pro',
                 contents: userPrompt,
                 config: { systemInstruction }
             });
@@ -414,7 +413,7 @@ export const KairosFinancialPanel: React.FC<KairosFinancialPanelProps> = ({ setV
 
             <div className="mt-8 text-center">
                 <button
-                    onClick={() => setView('home')}
+                    onClick={() => setView('manifesto')}
                     className="text-slate-400 hover:text-white transition-colors"
                 >
                     ← Volver al Menú Principal

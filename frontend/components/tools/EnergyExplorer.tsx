@@ -23,7 +23,7 @@ const OIL_PROJECT_COLORS = ['#059669', '#0d9488', '#0e7490', '#0369a1', '#075985
 
 // --- CHART COMPONENTS ---
 
-const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg text-sm">
@@ -39,7 +39,7 @@ const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({ active, pa
     return null;
 };
 
-const SankeyCustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({ active, payload }) => {
+const SankeyCustomTooltip: React.FC<any> = ({ active, payload }) => {
     if (active && payload && payload.length) {
         const data = payload[0];
         if (data.payload && data.payload.source && data.payload.target) {
@@ -180,10 +180,10 @@ const ArgentinaSankeyChart: React.FC<{ chartInfo: any }> = ({ chartInfo }) => {
                             </g>
                         );
                     }}
-                    link={(props: any) => ({
+                    link={((props: any) => ({
                         stroke: props.source.color,
                         strokeOpacity: 0.7
-                    })}
+                    })) as any}
                     nodePadding={30}
                     margin={{ top: 20, right: 150, bottom: 20, left: 150 }}
                 >
@@ -206,7 +206,7 @@ const ArgentinaDonutChart: React.FC<{ chartInfo: any }> = ({ chartInfo }) => {
             color: COLORS[index % COLORS.length]
         }));
     
-    const CustomDonutTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({ active, payload }) => {
+    const CustomDonutTooltip: React.FC<any> = ({ active, payload }) => {
         if (active && payload && payload.length && payload[0] && payload[0].payload) {
             const dataEntry = payload[0].payload as any;
             const color = dataEntry.color;

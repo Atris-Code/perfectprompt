@@ -1,5 +1,5 @@
 import type { CoPreset, SimulationResult, SimulationKPIs, GroupKey, GroupData } from '../types';
-import { GoogleGenAI, Type } from "@google/genai";
+import { generateText, generateJSON } from './aiProvider';
 import {
     calculateMean,
     calculateStdDev,
@@ -85,7 +85,7 @@ export async function simulateReactor(
     reactorId: string,
     preset: CoPreset,
     kpiName: string,
-    apiKey: string
+    _apiKey: string
 ): Promise<{ reactorId: string; kpiValue: number; fullResult: SimulationResult }> {
     try {
         // Crear contexto de simulación basado en el preset
@@ -99,7 +99,7 @@ export async function simulateReactor(
             description: preset.cinematicDescription
         };
 
-        // Llamar a geminiService para generar simulación realista
+        // Llamar a nexoService para generar simulación realista
         const prompt = `Simula un reactor de pirólisis con las siguientes condiciones:
 - Materia prima: ${simulationContext.feedstock}
 - Temperatura: ${simulationContext.temperature}°C
@@ -119,59 +119,41 @@ Responde SOLO con JSON válido en este formato exacto:
   "plantModel": {"electricalDemandKW": number}
 }`;
 
-        // Llamar directamente a Gemini API
-        const ai = new GoogleGenAI({ apiKey });
-        const result = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
+        // Llamar a la fachada unificada de IA
+        const schema = {
+            type: "object",
+            properties: {
+                simulatedYield: {
+                    type: "object",
                     properties: {
-                        simulatedYield: {
-                            type: Type.OBJECT,
-                            properties: {
-                                liquido: { type: Type.NUMBER },
-                                solido: { type: Type.NUMBER },
-                                gas: { type: Type.NUMBER }
-                            },
-                            required: ['liquido', 'solido', 'gas']
-                        },
-                        kpis: {
-                            type: Type.OBJECT,
-                            properties: {
-                                coste_bio_aceite: { type: Type.NUMBER },
-                                eficiencia_carbono: { type: Type.NUMBER },
-                                eficiencia_energetica: { type: Type.NUMBER },
-                                emisiones_netas: { type: Type.NUMBER }
-                            },
-                            required: ['coste_bio_aceite', 'eficiencia_carbono', 'eficiencia_energetica', 'emisiones_netas']
-                        },
-                        plantModel: {
-                            type: Type.OBJECT,
-                            properties: {
-                                electricalDemandKW: { type: Type.NUMBER }
-                            },
-                            required: ['electricalDemandKW']
-                        }
+                        liquido: { type: "number" },
+                        solido: { type: "number" },
+                        gas: { type: "number" }
                     },
-                    required: ['simulatedYield', 'kpis', 'plantModel']
+                    required: ["liquido", "solido", "gas"]
+                },
+                kpis: {
+                    type: "object",
+                    properties: {
+                        coste_bio_aceite: { type: "number" },
+                        eficiencia_carbono: { type: "number" },
+                        eficiencia_energetica: { type: "number" },
+                        emisiones_netas: { type: "number" }
+                    },
+                    required: ["coste_bio_aceite", "eficiencia_carbono", "eficiencia_energetica", "emisiones_netas"]
+                },
+                plantModel: {
+                    type: "object",
+                    properties: {
+                        electricalDemandKW: { type: "number" }
+                    },
+                    required: ["electricalDemandKW"]
                 }
-            }
-        });
-        
-        if (!result.text) {
-            throw new Error("Gemini returned empty response");
-        }
+            },
+            required: ["simulatedYield", "kpis", "plantModel"]
+        };
 
-        let parsedResult;
-        try {
-            parsedResult = JSON.parse(result.text);
-        } catch (e) {
-            console.error("Failed to parse Gemini JSON:", result.text);
-            throw new Error("Invalid JSON response from Gemini");
-        }
+        const parsedResult = await generateJSON<any>(prompt, { schema });
 
         // Validate and fill missing structure
         if (!parsedResult.simulatedYield) parsedResult.simulatedYield = { liquido: 0, solido: 0, gas: 0 };
@@ -277,7 +259,7 @@ export async function generateAIInsights(
     kpiName: string,
     results: GroupedExperimentResults,
     statistics: StatisticalAnalysis,
-    apiKey: string
+    _apiKey: string
 ): Promise<string> {
     const prompt = `Eres un experto en diseño de experimentos (DoE) y análisis estadístico de procesos de pirólisis.
 
@@ -320,18 +302,7 @@ Proporciona un análisis detallado en markdown que incluya:
 Sé técnicamente preciso pero claro. Usa negritas para destacar puntos importantes.`;
 
     try {
-        // Llamar directamente a Gemini API
-        const ai = new GoogleGenAI({ apiKey });
-        const result = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: prompt
-        });
-        
-        if (!result.text) {
-             throw new Error("Gemini returned empty response for insights");
-        }
-        
-        const insights = result.text; 
+        const insights = await generateText(prompt);
         return insights;
     } catch (error) {
         console.error('Error generando insights de IA:', error);

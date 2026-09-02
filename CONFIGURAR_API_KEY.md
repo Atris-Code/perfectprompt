@@ -1,106 +1,53 @@
-# 🔑 Guía: Configurar API Key de Gemini
+# 🔑 Guía: Configurar el proveedor de IA (OpenAI)
 
-## ❌ Problema Identificado
+> **Actualizado (Fase 1).** La integración con Gemini fue reemplazada por un
+> proxy backend `/api/ai` que custodia las claves **en el servidor**. El
+> navegador ya NO expone ninguna clave de API.
 
-Tu aplicación muestra el error:
+## Dónde se configura
+
+La clave vive **solo en el backend**, en el archivo `.env` (raíz del proyecto)
+o en las variables de entorno del servidor (docker-compose, etc.):
+
 ```
-API key not valid. Please pass a valid API key
+# Proveedor primario
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# Fallback opcional (texto/visión) — Anthropic Claude
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
+
+# URL del backend para el frontend
+VITE_NEXO_BACKEND_URL=http://localhost:8000
 ```
 
-**Causa:** La API key en el archivo `.env.local` no tiene el formato correcto o está vacía.
+## Pasos
 
-## ✅ Solución: Pasos para Configurar
-
-### Paso 1: Obtener una API Key válida de Google AI Studio
-
-1. **Visita Google AI Studio:**
-   - Ve a: https://aistudio.google.com/app/apikey
-
-2. **Inicia sesión:**
-   - Usa tu cuenta de Google
-
-3. **Crear API Key:**
-   - Haz clic en **"Get API key"** o **"Create API key"**
-   - Selecciona un proyecto existente o crea uno nuevo
-   - Copia la API key generada (empieza con algo como `AIzaSy...`)
-
-### Paso 2: Configurar el archivo .env.local
-
-1. **Abre el archivo `.env.local`** en la raíz del proyecto
-   - Ubicación: `f:\PerfectPrompt\.env.local`
-
-2. **Reemplaza el contenido** con tu nueva API key:
+1. Obtén una clave en https://platform.openai.com/api-keys
+2. Añádela a `.env` (junto al backend): `OPENAI_API_KEY=sk-...`
+3. Reinicia el backend:
+   ```powershell
+   cd backend
+   uvicorn main:app --host 0.0.0.0 --port 8000
    ```
-   GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-   ```
-   ⚠️ **IMPORTANTE:** Reemplaza `AIzaSyXXX...` con tu API key real
+4. Recarga la app (el frontend llama a `/api/ai/*` vía el proxy).
 
-3. **Guarda el archivo**
+## Verificación
 
-### Paso 3: Reiniciar el servidor de desarrollo
+- Sin clave configurada, el proxy `/api/ai/*` responde **502**.
+- Comprueba que la clave tenga saldo y permisos en el panel de OpenAI.
 
-En la terminal, presiona `Ctrl+C` para detener el servidor, luego:
+## Seguridad
 
-```powershell
-npm run dev
-```
+- **Nunca** pongas la clave en el frontend ni en `vite.config.ts`.
+- `.env` está en `.gitignore`.
+- En producción, cierra el puerto `8000` al público (nginx ya proxifica `/api`).
 
-### Paso 4: Verificar que funciona
+## Troubleshooting
 
-1. Recarga la página en el navegador (http://localhost:3000/)
-2. Intenta usar cualquier función de generación de contenido
-3. Debería funcionar sin errores
-
-## 📋 Formato Correcto de la API Key
-
-✅ **Formato válido:**
-```
-GEMINI_API_KEY=AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-❌ **Formatos incorrectos:**
-```
-GEMINI_API_KEY="tu_clave_aqui"
-GEMINI_API_KEY=
-GEMINI_API_KEY=xxxxxxxxxxxx
-```
-
-## 🔍 Verificación Rápida
-
-Después de configurar, ejecuta este comando para verificar:
-
-```powershell
-# Ver si la key está configurada (sin mostrar el valor completo)
-Get-Content .env.local | ForEach-Object { 
-    if ($_ -match "GEMINI_API_KEY=(.+)") { 
-        Write-Host "✅ API Key configurada: $($matches[1].Substring(0, 15))..." -ForegroundColor Green 
-    } 
-}
-```
-
-## ⚠️ Notas Importantes
-
-1. **Seguridad:**
-   - NO compartas tu API key públicamente
-   - NO la subas a repositorios públicos
-   - El archivo `.env.local` está en `.gitignore` (protegido)
-
-2. **Límites de uso:**
-   - Las API keys tienen límites de uso gratuito
-   - Monitorea tu uso en: https://aistudio.google.com/app/apikey
-
-3. **Troubleshooting:**
-   - Si el error persiste, verifica que copiaste la key completa
-   - Asegúrate de no tener espacios antes o después de la key
-   - La key debe ser una sola línea, sin saltos de línea
-
-## 🆘 ¿Necesitas Ayuda?
-
-Si después de seguir estos pasos el error continúa:
-1. Verifica que la key sea válida en Google AI Studio
-2. Intenta generar una nueva API key
-3. Revisa que el archivo `.env.local` no tenga caracteres especiales
+- **502 en `/api/ai`**: `OPENAI_API_KEY` ausente/vacía o sin saldo.
+- **401**: falta el token JWT (`nexo_token`) — inicia sesión primero.
+- Si falla OpenAI, el proxy intenta Claude como fallback (si `ANTHROPIC_API_KEY` está configurada).
 
 ---
 
-**Última actualización:** 10/12/2025 18:40
+**Última actualización:** migración a OpenAI (proxy `/api/ai`).

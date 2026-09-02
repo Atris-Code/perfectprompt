@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ARCHITECTURAL_STYLES } from '../../data/architecturalStyles';
 import type { ArchitecturalStyle } from '../../types';
-import { generateArchitecturalVisualization } from '../../services/geminiService';
+import { generateArchitecturalVisualization } from '../../services/nexoService';
 import { Accordion } from '../form/Accordion';
 
 const Slider: React.FC<{ label: string, value: number, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, min?: number, max?: number, step?: number, unit?: string }> = ({ label, value, onChange, min = 0, max = 100, step = 1, unit = '%' }) => (

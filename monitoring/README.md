@@ -57,7 +57,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 - **Request Latency**: Response time histograms for all endpoints
 - **Insight Generations**: Success/failure rates and latency for content generation
 - **Active Requests**: Current number of concurrent requests
-- **Gemini API Calls**: Usage statistics for AI service calls
+- **AI API Calls**: Usage statistics for AI service calls
 - **Feedback Submissions**: User feedback statistics by sentiment
 
 ### System Metrics
@@ -74,7 +74,7 @@ The pre-configured dashboard includes:
 1. **API Performance**: Request rates and response times
 2. **Success Rates**: Insight generation success percentages
 3. **Resource Usage**: System resource monitoring
-4. **AI Service Usage**: Gemini API call statistics
+4. **AI Service Usage**: AI API call statistics
 5. **User Feedback**: Sentiment analysis of user interactions
 
 ## Configuration

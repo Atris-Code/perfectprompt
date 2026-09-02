@@ -3,7 +3,7 @@ import { FormTextarea, FormSelect } from './form/FormControls';
 import { CLASSIFIED_VIDEO_PRESETS, ALL_VIDEO_PRESETS } from '../data/videoPresets';
 // FIX: Changed import of 'VideoPreset' from '../data/videoPresets' to '../types' to resolve export errors.
 import type { VideoPreset, DirectorAnalysis } from '../types';
-import { generateAcademyDemonstration } from '../services/geminiService';
+import { generateAcademyDemonstration } from '../services/nexoService';
 
 // FIX: Removed redundant global declarations for 'html2canvas' and 'window.jspdf' which are already centralized in types.ts.
 

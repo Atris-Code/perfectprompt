@@ -41,14 +41,19 @@ const PyrolysisSimulator: React.FC<PyrolysisSimulatorProps> = ({ onNavigateWithC
   // Cargar materiales al inicio
   useEffect(() => {
     const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
-    fetch(`${BASE_URL}/api/materials`)
+    const token = localStorage.getItem('nexo_token');
+    fetch(`${BASE_URL}/api/materials`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-            setMaterialsList(data);
+            // Fase 2: la API devuelve las 3 fases; el mezclador usa solo el feedstock (Sólido).
+            const solidos = data.filter((m: any) => m.fase === 'Sólido');
+            setMaterialsList(solidos);
             // Set default mixture if empty
-            if (data.length > 0 && mixture.length === 0) {
-                setMixture([{ id: data[0].id, name: data[0].name, percent: 100 }]);
+            if (solidos.length > 0 && mixture.length === 0) {
+                setMixture([{ id: solidos[0].id, name: solidos[0].name, percent: 100 }]);
             }
         } else {
             console.error("Expected array of materials, got:", data);
@@ -102,9 +107,13 @@ const PyrolysisSimulator: React.FC<PyrolysisSimulatorProps> = ({ onNavigateWithC
       };
 
       const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+      const token = localStorage.getItem('nexo_token');
       fetch(`${BASE_URL}/api/simulate`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
           body: JSON.stringify(payload)
       })
       .then(res => res.json())
@@ -188,7 +197,7 @@ const PyrolysisSimulator: React.FC<PyrolysisSimulatorProps> = ({ onNavigateWithC
                         onChange={setSelectedMaterialId}
                     >
                         {materialsList.map(m => (
-                            <Select.Option key={m.id} value={m.id}>{m.name} ({m.type})</Select.Option>
+                            <Select.Option key={m.id} value={m.id}>{m.name} ({(m as any).categoria || m.type})</Select.Option>
                         ))}
                     </Select>
                     <Button type="dashed" icon={<Database size={14}/>} onClick={addMaterialToMix}>

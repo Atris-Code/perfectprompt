@@ -109,89 +109,89 @@ const StoryModeIcon = () => React.createElement('svg', { xmlns: "http://www.w3.o
 const CinematicAuditIcon = Aegis9Icon;
 
 export const SYSTEM_MAP: SystemElement[] = [
-  // Núcleo Creativo
+  // Ala Creativa (El Estudio)
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'creator', nameKey: 'view.creator', icon: CreatorIcon(), type: 'Núcleo Creativo' },
+  { id: 'creator', nameKey: 'view.creator', icon: CreatorIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'tasks', nameKey: 'view.tasks', icon: TasksIcon(), type: 'Núcleo Creativo' },
+  { id: 'tasks', nameKey: 'view.tasks', icon: TasksIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'knowledge-base', nameKey: 'view.knowledgeBase', icon: KnowledgeIcon(), type: 'Núcleo Creativo' },
+  { id: 'knowledge-base', nameKey: 'view.knowledgeBase', icon: KnowledgeIcon(), type: 'Ala Creativa' },
 
-  // Estudios y Talleres
+  // Ala Creativa (El Estudio)
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'pro', nameKey: 'view.pro', icon: ProIcon(), type: 'Estudios y Talleres' },
+  { id: 'pro', nameKey: 'view.pro', icon: ProIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'editor', nameKey: 'view.editor', icon: EditorIcon(), type: 'Estudios y Talleres' },
+  { id: 'editor', nameKey: 'view.editor', icon: EditorIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'pro-layouts', nameKey: 'view.proLayouts', icon: LayoutsIcon(), type: 'Estudios y Talleres' },
+  { id: 'pro-layouts', nameKey: 'view.proLayouts', icon: LayoutsIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'podcast-studio', nameKey: 'view.podcastStudio', icon: PodcastIcon(), type: 'Estudios y Talleres' },
+  { id: 'podcast-studio', nameKey: 'view.podcastStudio', icon: PodcastIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'library', nameKey: 'view.library', icon: LibraryIcon(), type: 'Estudios y Talleres' },
+  { id: 'library', nameKey: 'view.library', icon: LibraryIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'gallery', nameKey: 'view.gallery', icon: GalleryIcon(), type: 'Estudios y Talleres' },
+  { id: 'gallery', nameKey: 'view.gallery', icon: GalleryIcon(), type: 'Ala Creativa' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'academia', nameKey: 'view.academia', icon: AcademiaIcon(), type: 'Estudios y Talleres' },
-  { id: 'interactive-fundamentals-lab', nameKey: 'view.interactiveFundamentalsLab', icon: LabIcon(), type: 'Estudios y Talleres' },
+  { id: 'academia', nameKey: 'view.academia', icon: AcademiaIcon(), type: 'Ala Creativa' },
+  { id: 'interactive-fundamentals-lab', nameKey: 'view.interactiveFundamentalsLab', icon: LabIcon(), type: 'Ala Creativa' },
 
-  // Simulación Industrial
-  { id: 'phoenix', nameKey: 'view.phoenix', icon: PhoenixIcon(), type: 'Simulación Industrial' },
-  { id: 'vulcano', nameKey: 'view.vulcano', icon: VulcanoIcon(), type: 'Simulación Industrial' },
-  { id: 'hmi-control-room', nameKey: 'view.hmiControlRoom', icon: HMIControlRoomIcon(), type: 'Simulación Industrial' },
-  { id: 'hyperion-9', nameKey: 'view.hyperion9', icon: Hyperion9Icon(), type: 'Simulación Industrial' },
-  { id: 'aegis-9', nameKey: 'view.aegis9', icon: Aegis9Icon(), type: 'Simulación Industrial' },
-  { id: 'eco-hornet-twin', nameKey: 'view.ecoHornetTwin', icon: EcoHornetIcon(), type: 'Simulación Industrial' },
-  { id: 'pyrolysis-hub', nameKey: 'view.pyrolysisHub', icon: HubIcon(), type: 'Simulación Industrial' },
-  { id: 'comparative-lab', nameKey: 'view.comparativeLab', icon: LabIcon(), type: 'Simulación Industrial' },
-  { id: 'process-optimizer', nameKey: 'view.processOptimizer', icon: OptimizerIcon(), type: 'Simulación Industrial' },
-  { id: 'experiment-designer', nameKey: 'view.experimentDesigner', icon: DesignerIcon(), type: 'Simulación Industrial' },
-  { id: 'gaia-lab', nameKey: 'view.gaiaLab', icon: GaiaLabIcon(), type: 'Simulación Industrial' },
-  { id: 'innovation-forge', nameKey: 'view.innovationForge', icon: ForgeIcon(), type: 'Simulación Industrial' },
-  { id: 'fleet-simulator', nameKey: 'view.fleetSimulator', icon: OrchestratorIcon(), type: 'Simulación Industrial' },
-  { id: 'circular-fleet', nameKey: 'view.circularFleet', icon: CircularFleetIcon(), type: 'Simulación Industrial' },
-  { id: 'catalyst-lab', nameKey: 'view.catalystLab', icon: CatalystLabIcon(), type: 'Simulación Industrial' },
-  { id: 'nexo-bridge', nameKey: 'Nexo Bridge (Demo)', icon: OrchestratorIcon(), type: 'Simulación Industrial' },
-  { id: 'architectural-synthesis-dashboard', nameKey: 'view.architecturalSynthesisDashboard', icon: ArchitectureIcon(), type: 'Simulación Industrial' },
+  // Ala Analítica (El Laboratorio)
+  { id: 'phoenix', nameKey: 'view.phoenix', icon: PhoenixIcon(), type: 'Ala Analítica' },
+  { id: 'vulcano', nameKey: 'view.vulcano', icon: VulcanoIcon(), type: 'Ala Analítica' },
+  { id: 'hmi-control-room', nameKey: 'view.hmiControlRoom', icon: HMIControlRoomIcon(), type: 'Ala Analítica' },
+  { id: 'hyperion-9', nameKey: 'view.hyperion9', icon: Hyperion9Icon(), type: 'Ala Analítica' },
+  { id: 'aegis-9', nameKey: 'view.aegis9', icon: Aegis9Icon(), type: 'Ala Analítica' },
+  { id: 'eco-hornet-twin', nameKey: 'view.ecoHornetTwin', icon: EcoHornetIcon(), type: 'Ala Analítica' },
+  { id: 'pyrolysis-hub', nameKey: 'view.pyrolysisHub', icon: HubIcon(), type: 'Ala Analítica' },
+  { id: 'comparative-lab', nameKey: 'view.comparativeLab', icon: LabIcon(), type: 'Ala Analítica' },
+  { id: 'process-optimizer', nameKey: 'view.processOptimizer', icon: OptimizerIcon(), type: 'Ala Analítica' },
+  { id: 'experiment-designer', nameKey: 'view.experimentDesigner', icon: DesignerIcon(), type: 'Ala Analítica' },
+  { id: 'gaia-lab', nameKey: 'view.gaiaLab', icon: GaiaLabIcon(), type: 'Ala Analítica' },
+  { id: 'innovation-forge', nameKey: 'view.innovationForge', icon: ForgeIcon(), type: 'Ala Analítica' },
+  { id: 'fleet-simulator', nameKey: 'view.fleetSimulator', icon: OrchestratorIcon(), type: 'Ala Analítica' },
+  { id: 'circular-fleet', nameKey: 'view.circularFleet', icon: CircularFleetIcon(), type: 'Ala Analítica' },
+  { id: 'catalyst-lab', nameKey: 'view.catalystLab', icon: CatalystLabIcon(), type: 'Ala Analítica' },
+  { id: 'nexo-bridge', nameKey: 'Nexo Bridge (Demo)', icon: OrchestratorIcon(), type: 'Nexo' },
+  { id: 'architectural-synthesis-dashboard', nameKey: 'view.architecturalSynthesisDashboard', icon: ArchitectureIcon(), type: 'Nexo' },
 
-  // Análisis y Datos
-  { id: 'property-visualizer', nameKey: 'view.propertyVisualizer', icon: VisualizerIcon(), type: 'Análisis y Datos' },
-  { id: 'energy-balance', nameKey: 'view.energyBalance', icon: EnergyIcon(), type: 'Análisis y Datos' },
-  { id: 'cogeneration-simulator', nameKey: 'view.cogenerationSimulator', icon: EnergyIcon(), type: 'Análisis y Datos' },
-  { id: 'utilities-simulator', nameKey: 'view.utilitiesSimulator', icon: UtilitiesIcon(), type: 'Análisis y Datos' },
-  { id: 'generative-simulator', nameKey: 'view.generativeSimulator', icon: GenerativeSimulatorIcon(), type: 'Análisis y Datos' },
-  { id: 'viability-assessor', nameKey: 'view.viabilityAssessor', icon: ViabilityAssessorIcon(), type: 'Análisis y Datos' },
-  { id: 'eco-casa-simulator', nameKey: 'view.ecoCasaSimulator', icon: EcoCasaIcon(), type: 'Análisis y Datos' },
-  { id: 'detailed-project-input', nameKey: 'view.detailedProjectInput', icon: HubIcon(), type: 'Análisis y Datos' },
-  { id: 'sustainable-certs', nameKey: 'view.sustainableCerts', icon: ReportIcon(), type: 'Análisis y Datos' },
-  { id: 'assay-manager', nameKey: 'view.assayManager', icon: AssayManagerIcon(), type: 'Análisis y Datos' },
-  { id: 'due-diligence-analyzer', nameKey: 'view.dueDiligenceAnalyzer', icon: DueDiligenceIcon(), type: 'Análisis y Datos' },
-  { id: 'call-simulator', nameKey: 'view.callSimulator', icon: CallSimulatorIcon(), type: 'Análisis y Datos' },
+  // Ala Analítica (El Laboratorio)
+  { id: 'property-visualizer', nameKey: 'view.propertyVisualizer', icon: VisualizerIcon(), type: 'Ala Analítica' },
+  { id: 'energy-balance', nameKey: 'view.energyBalance', icon: EnergyIcon(), type: 'Ala Analítica' },
+  { id: 'cogeneration-simulator', nameKey: 'view.cogenerationSimulator', icon: EnergyIcon(), type: 'Ala Analítica' },
+  { id: 'utilities-simulator', nameKey: 'view.utilitiesSimulator', icon: UtilitiesIcon(), type: 'Ala Analítica' },
+  { id: 'generative-simulator', nameKey: 'view.generativeSimulator', icon: GenerativeSimulatorIcon(), type: 'Ala Analítica' },
+  { id: 'viability-assessor', nameKey: 'view.viabilityAssessor', icon: ViabilityAssessorIcon(), type: 'Ala Analítica' },
+  { id: 'eco-casa-simulator', nameKey: 'view.ecoCasaSimulator', icon: EcoCasaIcon(), type: 'Ala Analítica' },
+  { id: 'detailed-project-input', nameKey: 'view.detailedProjectInput', icon: HubIcon(), type: 'Ala Analítica' },
+  { id: 'sustainable-certs', nameKey: 'view.sustainableCerts', icon: ReportIcon(), type: 'Ala Analítica' },
+  { id: 'assay-manager', nameKey: 'view.assayManager', icon: AssayManagerIcon(), type: 'Ala Analítica' },
+  { id: 'due-diligence-analyzer', nameKey: 'view.dueDiligenceAnalyzer', icon: DueDiligenceIcon(), type: 'Ala Analítica' },
+  { id: 'call-simulator', nameKey: 'view.callSimulator', icon: CallSimulatorIcon(), type: 'Ala Analítica' },
 
-  // Finanzas y Estrategia
+  // Ala Analítica (El Laboratorio)
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'chronos', nameKey: 'view.chronos', icon: ChronosIcon(), type: 'Finanzas y Estrategia' },
+  { id: 'chronos', nameKey: 'view.chronos', icon: ChronosIcon(), type: 'Ala Analítica' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'agriDeFi', nameKey: 'view.agriDeFi', icon: AgriDeFiIcon(), type: 'Finanzas y Estrategia' },
+  { id: 'agriDeFi', nameKey: 'view.agriDeFi', icon: AgriDeFiIcon(), type: 'Ala Analítica' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'kairos-panel', nameKey: 'view.kairos', icon: KairosIcon(), type: 'Finanzas y Estrategia' },
-  { id: 'strategic-risk-simulator', nameKey: 'view.strategyResilienceSimulator', icon: StrategyResilienceIcon(), type: 'Finanzas y Estrategia' },
+  { id: 'kairos-panel', nameKey: 'view.kairos', icon: KairosIcon(), type: 'Ala Analítica' },
+  { id: 'strategic-risk-simulator', nameKey: 'view.strategyResilienceSimulator', icon: StrategyResilienceIcon(), type: 'Ala Analítica' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'bioeconomy-lab', nameKey: 'view.bioeconomyLab', icon: IAStudioIcon(), type: 'Finanzas y Estrategia' },
-  { id: 'certification-comparator', nameKey: 'view.certificationComparator', icon: CertificateIcon(), type: 'Finanzas y Estrategia' },
+  { id: 'bioeconomy-lab', nameKey: 'view.bioeconomyLab', icon: IAStudioIcon(), type: 'Ala Analítica' },
+  { id: 'certification-comparator', nameKey: 'view.certificationComparator', icon: CertificateIcon(), type: 'Ala Analítica' },
 
-  // Colaboración y Sistema
+  // Gobernanza y Sistema
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'titans-atrium', nameKey: 'view.titansAtrium', icon: AtriumIcon(), type: 'Colaboración y Sistema' },
+  { id: 'titans-atrium', nameKey: 'view.titansAtrium', icon: AtriumIcon(), type: 'Gobernanza y Sistema' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'titans-debate', nameKey: 'view.titans-debate', icon: ForumIcon(), type: 'Colaboración y Sistema' },
-  { id: 'collaboration-agreement', nameKey: 'view.collaborationAgreement', icon: CollaborationAgreementIcon(), type: 'Colaboración y Sistema' },
-  { id: 'cinematic-audit', nameKey: 'view.cinematicAudit', icon: CinematicAuditIcon(), type: 'Colaboración y Sistema' },
-  { id: 'user-profile', nameKey: 'view.userProfile', icon: UserProfileIcon(), type: 'Colaboración y Sistema' },
-  { id: 'manifesto', nameKey: 'view.manifesto', icon: CreatorIcon(), type: 'Colaboración y Sistema' },
+  { id: 'titans-debate', nameKey: 'view.titans-debate', icon: ForumIcon(), type: 'Gobernanza y Sistema' },
+  { id: 'collaboration-agreement', nameKey: 'view.collaborationAgreement', icon: CollaborationAgreementIcon(), type: 'Gobernanza y Sistema' },
+  { id: 'cinematic-audit', nameKey: 'view.cinematicAudit', icon: CinematicAuditIcon(), type: 'Gobernanza y Sistema' },
+  { id: 'user-profile', nameKey: 'view.userProfile', icon: UserProfileIcon(), type: 'Gobernanza y Sistema' },
+  { id: 'manifesto', nameKey: 'view.manifesto', icon: CreatorIcon(), type: 'Gobernanza y Sistema' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'user-guide', nameKey: 'view.userGuide', icon: GuideIcon(), type: 'Colaboración y Sistema' },
-  { id: 'system-status-report', nameKey: 'view.systemStatusReport', icon: ReportIcon(), type: 'Colaboración y Sistema' },
+  { id: 'user-guide', nameKey: 'view.userGuide', icon: GuideIcon(), type: 'Gobernanza y Sistema' },
+  { id: 'system-status-report', nameKey: 'view.systemStatusReport', icon: ReportIcon(), type: 'Gobernanza y Sistema' },
   // FIX: Changed 'type' to a valid SystemCategory value.
-  { id: 'game', nameKey: 'view.game', icon: GameIcon(), type: 'Colaboración y Sistema' },
-  { id: 'story-mode', nameKey: 'view.storyMode', icon: StoryModeIcon(), type: 'Colaboración y Sistema' },
+  { id: 'game', nameKey: 'view.game', icon: GameIcon(), type: 'Gobernanza y Sistema' },
+  { id: 'story-mode', nameKey: 'view.storyMode', icon: StoryModeIcon(), type: 'Gobernanza y Sistema' },
 ];

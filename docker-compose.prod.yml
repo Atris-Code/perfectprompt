@@ -19,14 +19,20 @@ services:
     container_name: nexo_backend_prod
     restart: always
     command: uvicorn main:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000" # Optional: Expose if you want direct access, but Nginx handles it
+    # FIX (seguridad): no exponer el puerto 8000 al público; solo nginx lo alcanza.
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://188.166.19.103,http://localhost:3000}
+      # Fase 5: credenciales semilla — CAMBIAR en producción
+      - DEMO_EMAIL=${DEMO_EMAIL:-cientifico@nexo.com}
+      - DEMO_PASSWORD=${DEMO_PASSWORD:-ciencia123}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@nexo.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     depends_on:
       - db
     networks:
@@ -38,7 +44,6 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - VITE_NEXO_BACKEND_URL=http://188.166.19.103
-        - VITE_GEMINI_API_KEY=${GEMINI_API_KEY}
     container_name: nexo_frontend_prod
     restart: always
     ports:

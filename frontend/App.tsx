@@ -73,8 +73,8 @@ const GaiaLab = React.lazy(() => import('./components/tools/GaiaLab').then(modul
 import { TaskManager as COPRESETManager, type COPRESETPayload } from './services/taskManager';
 import { OFF_STATE } from './data/hmiConstants';
 import { ALL_STYLES } from './data/styles';
-import { initializeAgentChat, continueAgentChat } from './services/geminiService';
-import type { Chat } from './services/geminiService';
+import { initializeAgentChat, continueAgentChat } from './services/nexoService';
+import type { Chat } from './services/nexoService';
 
 import { ContentType } from './types';
 import type {
@@ -155,7 +155,8 @@ const initialGovernanceHistory: GovernanceEvent[] = [
 
 export const App: React.FC = () => {
   // Access Vite environment variable safely
-  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string || '';
+  // FIX (seguridad): la clave de IA ya no vive en el cliente; las llamadas pasan por el proxy backend.
+  const API_KEY = '';
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -243,6 +244,7 @@ export const App: React.FC = () => {
   // Auth State
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // --- AUTH RESTORATION ---
   useEffect(() => {
@@ -257,8 +259,9 @@ export const App: React.FC = () => {
           email: payload.email,
           full_name: payload.user_name || 'Usuario',
           is_active: true,
-          roles: (payload.roles || []).map((r: string) => ({ id: 0, name: r }))
-        });
+          token_version: payload.ver || 1,
+          roles: (payload.roles || []).map((r: string) => ({ id: 0, name: r, description: null }))
+        } as User);
       } catch (e) {
         console.error("Invalid token stored");
         localStorage.removeItem('nexo_token');
@@ -402,7 +405,7 @@ export const App: React.FC = () => {
     secondaryAssets: []
   });
 
-  const [issuanceState, setIssuanceState] = useState<IssuanceState>({
+  const [issuanceState, setIssuanceState] = useState<any>({
     contractStatus: 'UNDEPLOYED',
     tokenStatus: 'UNMINTED',
     contractAddress: null,
@@ -1585,7 +1588,7 @@ Insight: ${payload.insight}`;
             knowledgeSources={knowledgeSources}
             onNavigateToGovernance={handleNavigateToGovernance}
             onNavigateToOptimization={handleNavigateToOptimization}
-            initialData={srsInitialData} // Assuming Kairos can receive data from Hefesto via this prop
+            initialData={srsInitialData as any} // Assuming Kairos can receive data from Hefesto via this prop
           />;
         } else {
           return <TitanWorkspace
@@ -1620,8 +1623,8 @@ Insight: ${payload.insight}`;
       case 'viability-assessor': return <GlobalViabilityAssessor />;
       case 'eco-casa-simulator': return <EcoCasaSimulator onCreateReport={() => { }} onNavigateToArchitecturalSynth={() => { }} />;
       case 'detailed-project-input': return <DetailedProjectInput onSave={() => { }} />;
-      case 'sustainable-certs': return <CertificationComparator onSaveTask={handleSaveTask} setView={setView} />;
-      case 'certification-comparator': return <SustainableCerts onMint={handleMintCertification} setView={setView} />;
+      case 'sustainable-certs': return <SustainableCerts onMint={handleMintCertification} setView={setView} />;
+      case 'certification-comparator': return <CertificationComparator onSaveTask={handleSaveTask} setView={setView} />;
       case 'podcast-studio': return <PodcastStudio onSaveTask={handleSaveTask} setView={setView} onUseVideoPreset={() => { }} />;
       case 'titans-debate': return <TitansDebate knowledgeSources={knowledgeSources} initialTask={debateInitialData} onTaskConsumed={() => setDebateInitialData(null)} onSaveTask={handleSaveTask} onUpdateTask={handleUpdateTask} setView={setView} />;
       case 'due-diligence-analyzer': return <DueDiligenceAnalyzer onSaveTask={handleSaveTask} />;
@@ -1637,7 +1640,7 @@ Insight: ${payload.insight}`;
       case 'cinematic-audit': return cinematicAuditData ? <CinematicAuditPanel auditData={cinematicAuditData} onSaveTask={handleSaveTask} setView={setView} onDone={() => setCinematicAuditData(null)} /> : <p>No audit data available. Please start from the crisis intervention.</p>;
       case 'innovation-forge': return <InnovationForge coPresets={MOCK_CO_PRESETS} reactors={MOCK_REACTORS} addEvent={(m) => console.log('[IF]', m)} apiKey={API_KEY} onSaveTask={handleSaveTask} />;
       case 'nexo-bridge': return <NexoBridgeView />;
-      case 'admin-console': return authToken ? <AdminConsole token={authToken} onClose={() => setView('home')} /> : <Login onLogin={handleLogin} />;
+      case 'admin-console': return authToken ? <AdminConsole token={authToken} onClose={() => setView('manifesto')} /> : <Login onLogin={handleLogin} />;
       default: return <Manifesto />;
     }
   };
@@ -1648,9 +1651,9 @@ Insight: ${payload.insight}`;
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <aside className="w-64 bg-white flex-shrink-0 p-4 border-r border-gray-200 overflow-y-auto">
+      <aside className={`${sidebarOpen ? 'block' : 'hidden'} md:block w-64 bg-white flex-shrink-0 p-4 border-r border-gray-200 overflow-y-auto`}>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-gray-800">Prompt Perfect</h1>
+          <h1 className="text-xl font-bold text-gray-800">Nexo Sinérgico</h1>
           <button onClick={() => setAuthToken(null)} className="text-gray-500 hover:text-red-600 mr-2" aria-label="Logout" title="Cerrar Sesión">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -1671,9 +1674,16 @@ Insight: ${payload.insight}`;
             Admin Console
           </button>
         )}
-        <ViewSelector currentView={view} setView={setView} />
+        <ViewSelector currentView={view} setView={(v) => { setView(v); setSidebarOpen(false); }} />
       </aside>
       <main className="flex-grow p-4 bg-gray-50 overflow-y-auto h-full">
+        <button
+          onClick={() => setSidebarOpen(v => !v)}
+          className="md:hidden mb-2 px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 font-medium text-sm"
+          aria-label="Abrir menú"
+        >
+          ☰ Menú
+        </button>
         <Suspense fallback={<LoadingSpinner />}>
           {renderView()}
         </Suspense>

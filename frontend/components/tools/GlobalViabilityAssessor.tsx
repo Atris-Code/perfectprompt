@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { NexoAI } from "../../services/aiShim";
 import { Accordion } from '../form/Accordion';
 // FIX: Import 'FormInput' to resolve 'Cannot find name' errors.
 import { FormSelect, FormInput } from '../form/FormControls';
@@ -148,7 +148,7 @@ export const GlobalViabilityAssessor: React.FC = () => {
         calculateScores();
 
         // Auto-detectar triggers cuando cambien inputs o scores
-        const tags = analyzeViabilityTriggers(inputs, scores);
+        const tags = analyzeViabilityTriggers(inputs as any, scores);
         setDetectedTags(tags);
 
         const template = selectContentTemplate(tags, scores);
@@ -159,7 +159,7 @@ export const GlobalViabilityAssessor: React.FC = () => {
         setIsAnalyzing(true);
         setAiAnalysis('');
         try {
-            const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string || '' });
+            const ai = new NexoAI({ apiKey: '' });
             const prompt = `
             Eres un consultor experto en tecnologías de valorización de residuos. Analiza la siguiente tecnología basada en los parámetros proporcionados por el usuario.
             Proporciona un resumen conciso de sus fortalezas y debilidades clave en formato de viñetas (una lista para fortalezas y otra para debilidades). Sé directo y profesional.
@@ -183,7 +183,6 @@ export const GlobalViabilityAssessor: React.FC = () => {
             Basado en estos datos, genera el análisis de fortalezas y debilidades.
             `;
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
                 contents: prompt
             });
             setAiAnalysis(response.text);
@@ -203,7 +202,7 @@ export const GlobalViabilityAssessor: React.FC = () => {
 
         setIsGeneratingContent(true);
         try {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string || '';
+            const apiKey = ''; // la clave ya no vive en el cliente (proxy backend)
             const content = await generateMultimediaContent(aiAnalysis, selectedTemplate, apiKey);
             setMultimediaContent(content);
         } catch (error) {

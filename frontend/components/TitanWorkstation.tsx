@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
-import type { Chat, GenerateContentResponse } from "@google/genai";
+import { NexoAI, Type } from "../services/aiShim";
+import type { Chat, GenerateContentResponse } from "../services/aiShim";
 import type {
     CharacterProfile,
     View,
@@ -14,7 +14,7 @@ import type {
 } from '../types';
 import { M3Simulator } from './tools/M3Simulator';
 import { ChatPanel } from './ChatPanel';
-import { delegateToAssistant } from '../services/geminiService';
+import { delegateToAssistant } from '../services/nexoService';
 
 interface TitanWorkstationProps {
     titan: CharacterProfile;
@@ -72,7 +72,7 @@ const runLocalMonteCarlo = (params: { temperature: number; residenceTime: number
     };
 };
 
-export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBack, onNavigateToRiskSimulator, onNavigateToGovernance }) => {
+export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBack, onNavigateToRiskSimulator, onNavigateToGovernance, knowledgeSources }) => {
     const [params, setParams] = useState({
         temperature: 575,
         residenceTime: 3.0,
@@ -89,16 +89,15 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
 
     // Initialize Chat
     useEffect(() => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new NexoAI({ apiKey: '' });
         
         let systemPrompt = titan.system_prompt;
         if (titan.assistants && titan.assistants.length > 0) {
-            const assistantsList = titan.assistants.filter(a => a.is_active).map(a => `- ${a.name}: ${a.role_prompt.substring(0, 150)}...`).join('\n');
+            const assistantsList = titan.assistants.filter(a => a.status === 'ACTIVE').map(a => `- ${a.name}: ${a.rolePrompt.substring(0, 150)}...`).join('\n');
             systemPrompt += `\n\nTIENES ACCESO A LOS SIGUIENTES ASISTENTES ESPECIALIZADOS:\n${assistantsList}\n\nSi una tarea requiere conocimiento específico de uno de estos asistentes, PUEDES DELEGARLA. Para hacerlo, responde con un JSON que incluya 'accion_ui' con tipo 'DELEGAR_TAREA' y payload { asistente_nombre: string, tarea: string }.`;
         }
 
         chatSessionRef.current = ai.chats.create({
-            model: 'gemini-2.5-pro',
             config: { systemInstruction: systemPrompt },
         });
 
@@ -178,9 +177,7 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
                 // But we need to access them here.
                 // Let's check props.
                 
-                const responseText = await delegateToAssistant(taskDescription, assistant, (props as any).knowledgeSources || []); // Using 'props' isn't available directly in functional component body like this.
-                // We need to use the prop 'knowledgeSources' from the component arguments.
-                // It is available in the scope: 'knowledgeSources'
+                const responseText = await delegateToAssistant(taskDescription, assistant, knowledgeSources || []);
                 
                 const resultMsg: ChatMessage = { 
                     id: `result-${Date.now()}`, 
@@ -291,11 +288,10 @@ export const TitanWorkstation: React.FC<TitanWorkstationProps> = ({ titan, onBac
         setIsAgentReplying(true);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new NexoAI({ apiKey: '' });
             const prompt = `${titan.system_prompt}\n\nAnaliza la siguiente petición del usuario: "${message}". Responde estrictamente con un objeto JSON que siga el schema definido, conteniendo 'respuesta_chat' y 'accion_ui'.`;
             
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-pro',
                 contents: prompt,
                 config: {
                     responseMimeType: "application/json",

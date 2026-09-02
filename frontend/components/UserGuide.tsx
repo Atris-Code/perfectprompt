@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ContentType } from '../types';
-import { generateNarrativeAudio } from '../services/geminiService';
+import { generateNarrativeAudio } from '../services/nexoService';
 import { useMarco } from '../contexts/MarcoContext';
 
 // Audio decoding helpers

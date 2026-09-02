@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { GoogleGenAI } from "@google/genai";
-import { generateCinematicImage, generateCinematicVideo } from '../../services/geminiService';
+import { NexoAI } from "../../services/aiShim";
+import { generateCinematicImage, generateCinematicVideo } from '../../services/nexoService';
 import type { HMIState, View, AgentMode, Alarm, AlarmConfig, CoPreset, SolidMaterial } from '../../types';
 import { PYROLYSIS_MATERIALS, SIMULATION_ENGINE } from '../../data/pyrolysisMaterials';
 import { CO_PRESETS } from '../../data/coPresets';
@@ -511,9 +511,7 @@ const CinematicViewTab: React.FC<HMIControlRoomProps> = (props) => {
                 </div>
                 {!isVeoEnabled && (
                     <div className="p-3 bg-yellow-900/50 border border-yellow-700 rounded-md text-sm text-yellow-300">
-                        <p>{t('hmi.cinematicView.apiKeyDisclaimer')}
-                           <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline">{t('hmi.cinematicView.apiKeyDisclaimerLink')}</a>
-                        </p>
+                        <p>{t('hmi.cinematicView.apiKeyDisclaimer')}</p>
                         <button onClick={handleGenerateVideo} className="mt-2 w-full bg-yellow-600 text-white font-semibold py-2 rounded">{t('hmi.cinematicView.selectApiKey')}</button>
                     </div>
                 )}

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Accordion } from './form/Accordion';
 import { KNOWLEDGE_BASE } from '../data/knowledgeBase';
-import { extractMaterialFromDocument } from '../services/geminiService';
+import { extractMaterialFromDocument } from '../services/nexoService';
 import type { PyrolysisMaterial } from '../types';
 
 // FIX: Removed redundant global declaration for 'pdfjsLib' which is now centralized in types.ts.

@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // Configuración única del worker de PDF.js (bundled por Vite en vez de CDN).
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;

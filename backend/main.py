@@ -6,21 +6,22 @@ if sys.version_info < (3, 10):
         importlib.metadata.packages_distributions = importlib_metadata.packages_distributions
 
 from typing import List
-from datetime import timedelta
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 # Auth Imports
 from database import get_db, engine, Base
-from models import User, AuditLog, Role, Material, Assistant
-from schemas import LoginRequest, TokenResponse, ContextPayload, AuditLogResponse, UserRoleUpdate, User as UserSchema, UserCreate, BridgeRequest, Material as MaterialSchema, SimulationRequest, SimulationResult, KairosRequest, KairosResponse, AssistantCreate, AssistantUpdate, Assistant as AssistantSchema
-from security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
+from models import User, AuditLog, Role, Material, Assistant, RefreshToken
+from schemas import LoginRequest, TokenResponse, RefreshRequest, GoogleLoginRequest, ContextPayload, AuditLogResponse, UserRoleUpdate, User as UserSchema, UserCreate, BridgeRequest, Material as MaterialSchema, SimulationRequest, SimulationResult, KairosRequest, KairosResponse, AssistantCreate, AssistantUpdate, Assistant as AssistantSchema
+from security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, generate_refresh_token
 from dependencies import get_current_user, require_role
 from nexo_brain import get_system_prompt
 from audit import log_action_background
 from ai_service import generate_nexo_response, generate_kairos_verdict
 from ai_router import router as ai_router, nexo_router
+from app.routers import cfo_simulator
 from config import settings
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -46,6 +47,7 @@ app.add_middleware(
 # Proxy de IA (custodia de claves) + endpoint de dominio Nexo
 app.include_router(ai_router)
 app.include_router(nexo_router)
+app.include_router(cfo_simulator.router, prefix="/api/cfo", tags=["CFO Project Finance"])
 
 @app.get("/")
 def root():
@@ -90,6 +92,15 @@ def login_for_access_token(
         data=token_payload, expires_delta=access_token_expires
     )
 
+    # 4b. Generar refresh token (opaco, 30 días)
+    refresh_token = generate_refresh_token()
+    db.add(RefreshToken(
+        token=refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=30)
+    ))
+    db.commit()
+
     # 5. Audit Log (Background)
     background_tasks.add_task(
         log_action_background,
@@ -104,7 +115,156 @@ def login_for_access_token(
         "access_token": access_token,
         "token_type": "bearer",
         "roles": role_names,
-        "user_name": user.full_name
+        "user_name": user.full_name,
+        "refresh_token": refresh_token
+    }
+
+
+@app.post("/auth/refresh", response_model=TokenResponse, tags=["Authentication"])
+def refresh_access_token(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """
+    Intercambia un refresh token válido por un nuevo access token JWT.
+    Rota el refresh token (revoca el actual y emite uno nuevo).
+    """
+    rt = db.query(RefreshToken).filter(RefreshToken.token == payload.refresh_token).first()
+    if not rt:
+        raise HTTPException(status_code=401, detail="Refresh token inválido")
+    if rt.expires_at < datetime.utcnow():
+        db.delete(rt)
+        db.commit()
+        raise HTTPException(status_code=401, detail="Refresh token expirado")
+
+    user = db.query(User).filter(User.id == rt.user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="Usuario no válido")
+
+    role_names = [role.name for role in user.roles]
+    token_payload = {
+        "sub": user.id,
+        "email": user.email,
+        "roles": role_names,
+        "ver": user.token_version,
+    }
+    access_token = create_access_token(
+        data=token_payload,
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    # Rotar refresh token
+    new_refresh_token = generate_refresh_token()
+    db.delete(rt)
+    db.add(RefreshToken(token=new_refresh_token, user_id=user.id, expires_at=datetime.utcnow() + timedelta(days=30)))
+    db.commit()
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "roles": role_names,
+        "user_name": user.full_name,
+        "refresh_token": new_refresh_token,
+    }
+
+
+@app.post("/auth/logout", tags=["Authentication"])
+def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """
+    Revoca el refresh token, cerrando la sesión de forma efectiva.
+    """
+    rt = db.query(RefreshToken).filter(RefreshToken.token == payload.refresh_token).first()
+    if rt:
+        db.delete(rt)
+        db.commit()
+    return {"message": "Sesión cerrada correctamente"}
+
+
+@app.post("/auth/google", response_model=TokenResponse, tags=["Authentication"])
+def login_google(
+    payload: GoogleLoginRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Sign in with Google (OAuth por ID token).
+
+    El navegador obtiene un ID token del SDK Google Identity Services y lo envía
+    aquí. El backend verifica la firma contra las claves públicas de Google y
+    comprueba el `aud` (GOOGLE_CLIENT_ID). Si el correo no existe, crea un usuario
+    con el rol mínimo "Colaborador".
+    """
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=503, detail="OAuth Google no configurado (GOOGLE_CLIENT_ID)")
+
+    try:
+        # Import diferido: el backend arranca igualmente si google-auth no está instalado.
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
+        idinfo = google_id_token.verify_oauth2_token(
+            payload.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+        )
+    except ImportError:
+        raise HTTPException(status_code=503, detail="Dependencia 'google-auth' no instalada en el backend")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"ID token de Google inválido: {e}")
+
+    iss = idinfo.get("iss", "")
+    if iss not in ("accounts.google.com", "https://accounts.google.com"):
+        raise HTTPException(status_code=401, detail="Emisor de token no confiable")
+
+    email = idinfo.get("email")
+    if not email or not idinfo.get("email_verified"):
+        raise HTTPException(status_code=401, detail="Correo de Google no verificado")
+
+    name = idinfo.get("name") or email.split("@")[0]
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        default_role = db.query(Role).filter(Role.name == "Colaborador").first()
+        user = User(
+            email=email,
+            full_name=name,
+            # hash aleatorio inutilizable: el alta por OAuth no define contraseña local.
+            password_hash=get_password_hash(generate_refresh_token()),
+            token_version=1,
+            is_active=True,
+        )
+        if default_role:
+            user.roles.append(default_role)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Usuario inactivo. Contacte al Admin.")
+
+    role_names = [role.name for role in user.roles]
+    access_token = create_access_token(
+        data={"sub": user.id, "email": user.email, "roles": role_names, "ver": user.token_version},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
+    refresh_token = generate_refresh_token()
+    db.add(RefreshToken(
+        token=refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=30)
+    ))
+    db.commit()
+
+    background_tasks.add_task(
+        log_action_background,
+        actor_id=user.id,
+        action_type="LOGIN_GOOGLE",
+        ip_address=request.client.host,
+        details={"email": user.email}
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "roles": role_names,
+        "user_name": user.full_name,
+        "refresh_token": refresh_token,
     }
 
 # --- PROTECTED ROUTES (DEMO) ---

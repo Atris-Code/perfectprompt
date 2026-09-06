@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 // FIX: Removed conflicting local declaration of 'SystemElement'. The type is now imported from 'types.ts'.
 import type { SystemElement, View, SystemCategory } from '../types';
@@ -107,8 +105,16 @@ const ReportIcon = () => React.createElement('svg', { xmlns: "http://www.w3.org/
 const UserProfileIcon = () => React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: iconClass, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" }));
 const StoryModeIcon = () => React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: iconClass, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1v12z" }));
 const CinematicAuditIcon = Aegis9Icon;
+const CfoFinanceIcon = () => React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: iconClass, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+  React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" })
+);
+const DashboardIcon = () => React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: iconClass, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+  React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" })
+);
 
 export const SYSTEM_MAP: SystemElement[] = [
+  // Panel de Control por perfil (Nexo)
+  { id: 'dashboard', nameKey: 'view.dashboard', icon: DashboardIcon(), type: 'Nexo' },
   // Ala Creativa (El Estudio)
   // FIX: Changed 'type' to a valid SystemCategory value.
   { id: 'creator', nameKey: 'view.creator', icon: CreatorIcon(), type: 'Ala Creativa' },
@@ -178,6 +184,16 @@ export const SYSTEM_MAP: SystemElement[] = [
   // FIX: Changed 'type' to a valid SystemCategory value.
   { id: 'bioeconomy-lab', nameKey: 'view.bioeconomyLab', icon: IAStudioIcon(), type: 'Ala Analítica' },
   { id: 'certification-comparator', nameKey: 'view.certificationComparator', icon: CertificateIcon(), type: 'Ala Analítica' },
+  // Milestone 3: Project Finance CFO Simulator
+  {
+    id: 'cfo-finance-simulator',
+    nameKey: 'view.cfoFinanceSimulator',
+    icon: CfoFinanceIcon(),
+    type: 'Ala Analítica',
+    title: 'Simulador Project Finance CFO',
+    category: 'ala analítica',
+    description: 'Modelado institucional de Project Finance, estructuración de deuda francesa, bancabilidad DSCR y simulación SDD.'
+  },
 
   // Gobernanza y Sistema
   // FIX: Changed 'type' to a valid SystemCategory value.

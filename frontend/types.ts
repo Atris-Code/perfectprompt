@@ -637,7 +637,7 @@ export interface SensationCategory {
   narrativePurpose: string;
 }
 
-export type View = 'creator' | 'library' | 'pro' | 'academia' | 'editor' | 'gallery' | 'pro-layouts' | 'tasks' | 'pyrolysis-hub' | 'comparative-lab' | 'knowledge-base' | 'process-optimizer' | 'property-visualizer' | 'energy-balance' | 'user-guide' | 'game' | 'experiment-designer' | 'titans-atrium' | 'hmi-control-room' | 'hyperion-9' | 'assay-manager' | 'aegis-9' | 'phoenix' | 'vulcano' | 'bioeconomy-lab' | 'chronos' | 'agriDeFi' | 'gaia-lab' | 'innovation-forge' | 'kairos-panel' | 'strategic-risk-simulator' | 'cogeneration-simulator' | 'fleet-simulator' | 'catalyst-lab' | 'utilities-simulator' | 'generative-simulator' | 'circular-fleet' | 'energy-explorer' | 'viability-assessor' | 'eco-casa-simulator' | 'detailed-project-input' | 'sustainable-certs' | 'certification-comparator' | 'podcast-studio' | 'titans-debate' | 'due-diligence-analyzer' | 'call-simulator' | 'collaboration-agreement' | 'interactive-fundamentals-lab' | 'architectural-synthesis-dashboard' | 'system-status-report' | 'user-profile' | 'manifesto' | 'story-mode' | 'eco-hornet-twin' | 'expert-command-center' | 'titan-workstation' | 'cinematic-audit' | 'nexo-bridge' | 'admin-console';
+export type View = 'dashboard' | 'creator' | 'library' | 'pro' | 'academia' | 'editor' | 'gallery' | 'pro-layouts' | 'tasks' | 'pyrolysis-hub' | 'comparative-lab' | 'knowledge-base' | 'process-optimizer' | 'property-visualizer' | 'energy-balance' | 'user-guide' | 'game' | 'experiment-designer' | 'titans-atrium' | 'hmi-control-room' | 'hyperion-9' | 'assay-manager' | 'aegis-9' | 'phoenix' | 'vulcano' | 'bioeconomy-lab' | 'chronos' | 'agriDeFi' | 'gaia-lab' | 'innovation-forge' | 'kairos-panel' | 'strategic-risk-simulator' | 'cogeneration-simulator' | 'fleet-simulator' | 'catalyst-lab' | 'utilities-simulator' | 'generative-simulator' | 'circular-fleet' | 'energy-explorer' | 'viability-assessor' | 'eco-casa-simulator' | 'detailed-project-input' | 'sustainable-certs' | 'certification-comparator' | 'podcast-studio' | 'titans-debate' | 'due-diligence-analyzer' | 'call-simulator' | 'collaboration-agreement' | 'interactive-fundamentals-lab' | 'architectural-synthesis-dashboard' | 'system-status-report' | 'user-profile' | 'manifesto' | 'story-mode' | 'eco-hornet-twin' | 'expert-command-center' | 'titan-workstation' | 'cinematic-audit' | 'nexo-bridge' | 'admin-console' | 'cfo-finance-simulator';
 // Fase 3: taxonomía de 4 zonas alineada con el Manifiesto del Nexo Sinérgico.
 export type SystemCategory = 'Ala Analítica' | 'Ala Creativa' | 'Nexo' | 'Gobernanza y Sistema';
 export interface SystemElement {
@@ -645,6 +645,9 @@ export interface SystemElement {
   nameKey: string;
   icon: React.ReactNode;
   type: SystemCategory;
+  title?: string;
+  category?: string;
+  description?: string;
 }
 
 export interface InspirationItem {
@@ -978,6 +981,26 @@ export interface SimulationResult {
     gas: number[];
   };
   sensitivityAnalysis?: { variable: string; impact: number; description: string; }[];
+  // SDD Project Finance additions (compatible with CFO specs)
+  scenario_name?: string;
+  summary?: SimulationSummary;
+  annual_projections?: AnnualProjection[];
+  sensitivities?: Record<string, SensitivityScenario>;
+  covenants?: CovenantReport;
+  total_capex?: number;
+  senior_debt_principal?: number;
+  annual_cuota?: number;
+  equity_invested?: number;
+  ebitda_avg?: number;
+  dscr_min?: number;
+  dscr_avg?: number;
+  equity_irr_pct?: number | null;
+  project_irr_pct?: number | null;
+  npv_equity?: number | null;
+  dynamic_payback_years?: number | null;
+  cash_sweep_triggered?: boolean;
+  default_alert?: boolean;
+  schedule?: AnnualProjection[];
 }
 
 // Added for the M3 Simulator in TitanWorkstation
@@ -1714,4 +1737,180 @@ export interface NexoConfig {
     objective: string;
     presentation: string;
   }>;
+}
+
+// ============================================================================
+// SDD CFO PROJECT FINANCE SPECIFICATION MODELS (Milestone 3)
+// ============================================================================
+
+export type IndustrialProcessType = 'biochar' | 'chp' | 'custom';
+
+export interface BiocharProcessParams {
+  feedstock_input_t_day: number;
+  operating_days_year: number;
+  feedstock_moisture_pct: number;
+  feedstock_cost_eur_ton: number;
+  pyrolysis_temp_c: number;
+  oxygen_leak_pct: number;
+  char_sale_price_eur_ton: number;
+  corc_yield_tco2e_per_ton_char: number;
+  corc_price_eur_tco2e: number;
+  aux_electricity_kwh_ton: number;
+  grid_electricity_eur_mwh: number;
+  fixed_om_eur_year?: number | null;
+  variable_om_pct_revenue?: number | null;
+}
+
+export interface ChpProcessParams {
+  electrical_capacity_kw: number;
+  operating_hours_year: number;
+  electrical_efficiency: number;
+  thermal_efficiency: number;
+  fuel_cost_eur_mwh_lhv: number;
+  electricity_sale_price_eur_mwh: number;
+  host_thermal_demand_kw: number;
+  heat_sale_price_eur_mwh: number;
+  capex_base_eur: number;
+  capex_per_kw: number;
+  fixed_om_eur_year: number;
+  variable_om_eur_mwh: number;
+  parasitic_cooling_kw_per_mw_dumped: number;
+}
+
+export interface IndustrialProcessSpec {
+  process_type: IndustrialProcessType;
+  name: string;
+  fixed_capex: number;
+  nwc: number;
+  fixed_om_eur_year: number;
+  variable_om_pct_revenue: number;
+  biochar_params?: BiocharProcessParams | null;
+  chp_params?: ChpProcessParams | null;
+}
+
+export interface FinancialParametersSpec {
+  senior_debt_share: number;
+  senior_debt_term_years: number;
+  senior_debt_interest_rate: number;
+  mezzanine_debt_share: number;
+  mezzanine_interest_rate: number;
+  corporate_tax_rate: number;
+  depreciation_years: number;
+  discount_rate_wacc: number;
+  discount_rate_equity: number;
+  covenant_cash_sweep_dscr: number;
+  covenant_default_dscr: number;
+  cash_sweep_share: number;
+  project_lifetime_years: number;
+}
+
+export interface AnnualProjection {
+  year: number;
+  revenue: number;
+  opex: number;
+  ebitda: number;
+  depreciation: number;
+  ebit: number;
+  interest: number;
+  ebt: number;
+  tax: number;
+  cfads: number;
+  debt_service: number;
+  principal: number;
+  remaining_debt: number;
+  mezzanine_service?: number;
+  cash_sweep?: number;
+  fcfe: number;
+  dscr: number;
+  covenant_breach?: boolean;
+  default_breach?: boolean;
+}
+
+export interface SensitivityScenario {
+  name: string;
+  ebitda: number;
+  cfads: number;
+  min_dscr: number;
+  avg_dscr: number;
+  equity_irr?: number | null;
+  project_npv?: number | null;
+  cash_sweep_triggered?: boolean;
+  covenant_breach?: boolean;
+  default_alert?: boolean;
+  details?: string | null;
+}
+
+export interface CovenantReport {
+  min_dscr_covenant: number;
+  observed_min_dscr: number;
+  compliance_status: string;
+  cash_sweep_activated: boolean;
+  default_alert_triggered: boolean;
+  alerts?: string[];
+}
+
+export interface SimulationSummary {
+  total_capex: number;
+  capex_fixed: number;
+  nwc: number;
+  equity_invested: number;
+  senior_debt_principal: number;
+  senior_debt_annual_payment: number;
+  mezzanine_debt_principal?: number;
+  ebitda_base_year1: number;
+  min_dscr: number;
+  avg_dscr: number;
+  equity_irr?: number | null;
+  project_irr?: number | null;
+  npv_equity?: number | null;
+  project_npv?: number | null;
+  dynamic_payback_years?: number | null;
+  covenant_breaches_count?: number;
+  cash_sweep_triggered?: boolean;
+  default_alert?: boolean;
+}
+
+export interface ChpScanPoint {
+  pe_kw: number;
+  ebitda: number;
+  annual_cuota: number;
+  dscr_avg: number;
+  dscr_min: number;
+  equity_irr?: number | null;
+  payback_years?: number | null;
+  heat_valorized_pct: number;
+  trap?: boolean;
+  trap_details?: string | null;
+}
+
+export interface ChpOptimizationResult {
+  optimal_pe_kw: number;
+  optimal_equity_irr?: number | null;
+  optimal_avg_dscr: number;
+  optimal_payback_years?: number | null;
+  scan_curve: ChpScanPoint[];
+  oversizing_trap_identified?: boolean;
+  trap_details?: string | null;
+}
+
+export interface CfoSimulationResult {
+  scenario_name: string;
+  summary: SimulationSummary;
+  annual_projections: AnnualProjection[];
+  sensitivities: Record<string, SensitivityScenario>;
+  covenants: CovenantReport;
+  total_capex?: number;
+  senior_debt_principal?: number;
+  annual_cuota?: number;
+  equity_invested?: number;
+  ebitda_avg?: number;
+  dscr_min?: number;
+  dscr_avg?: number;
+  equity_irr_pct?: number | null;
+  project_irr_pct?: number | null;
+  npv_equity?: number | null;
+  dynamic_payback_years?: number | null;
+  cash_sweep_triggered?: boolean;
+  default_alert?: boolean;
+  schedule?: AnnualProjection[];
 }

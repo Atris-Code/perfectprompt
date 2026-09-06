@@ -39,6 +39,7 @@ import type {
   IndustrialProcessType,
   BiocharProcessParams,
   ChpProcessParams,
+  WteRsuProcessParams,
   IndustrialProcessSpec,
   FinancialParametersSpec,
   AnnualProjection,
@@ -726,6 +727,28 @@ export const CfoFinanceSimulator: React.FC<CfoFinanceSimulatorProps> = ({ onSave
     parasitic_cooling_kw_per_mw_dumped: 25.0,
   });
 
+  // 4b. WTE-RSU Physical Parameters (Preset 3: 50,000 t/año, 3.0M fixed, 150k NWC)
+  const [wteRsuParams, setWteRsuParams] = useState<WteRsuProcessParams>({
+    annual_capacity_t: 50000.0,
+    capex_per_ton_year: 100.0,
+    grant_fraction: 0.40,
+    gate_fee_eur_ton: 50.0,
+    opex_base_eur_ton: 30.0,
+    opex_humidity_penalty_eur_ton_pct: 2.0,
+    pci_base_mj_kg: 9.5,
+    conversion_efficiency: 0.75,
+    biogenic_fraction: 0.55,
+    electricity_price_eur_mwh: 65.0,
+    electricity_share: 0.40,
+    heat_price_eur_mwh: 30.0,
+    heat_share: 0.60,
+    go_price_eur_mwh: 12.0,
+    carbon_price_eur_tco2e: 20.0,
+    co2_factor_tco2e_per_mwh: 0.30,
+    design_humidity: 0.40,
+    actual_humidity: 0.42,
+  });
+
   // 5. Custom / Base CAPEX state
   const [fixedCapexCustom, setFixedCapexCustom] = useState<number>(3200000.0);
   const [nwcCustom, setNwcCustom] = useState<number>(150000.0);
@@ -760,6 +783,17 @@ export const CfoFinanceSimulator: React.FC<CfoFinanceSimulatorProps> = ({ onSave
         variable_om_pct_revenue: 0.02,
         chp_params: chpParams,
       };
+    } else if (processType === 'wte_rsu') {
+      const derivedCapex = wteRsuParams.capex_per_ton_year * wteRsuParams.annual_capacity_t * (1.0 - wteRsuParams.grant_fraction);
+      return {
+        process_type: 'wte_rsu',
+        name: `Valorización WTE-RSU (${wteRsuParams.annual_capacity_t.toLocaleString('es-ES')} t/año)`,
+        fixed_capex: derivedCapex,
+        nwc: wteRsuParams.annual_capacity_t * 3.0,
+        fixed_om_eur_year: 0.0,
+        variable_om_pct_revenue: 0.02,
+        wte_rsu_params: wteRsuParams,
+      };
     } else {
       return {
         process_type: 'custom',
@@ -770,7 +804,7 @@ export const CfoFinanceSimulator: React.FC<CfoFinanceSimulatorProps> = ({ onSave
         variable_om_pct_revenue: 0.02,
       };
     }
-  }, [processType, biocharParams, chpParams, fixedCapexCustom, nwcCustom]);
+  }, [processType, biocharParams, chpParams, wteRsuParams, fixedCapexCustom, nwcCustom]);
 
   // Execute simulation (attempts backend API first, falls back instantly to client math)
   const runSimulation = useCallback(async () => {
@@ -980,6 +1014,43 @@ ${processType === 'chp' ? `## 5. Dictamen Forense: Detector de la Trampa de los 
     document.body.removeChild(link);
   };
 
+  // Export Excel (.xlsx) report from the backend engine
+  const handleExportExcel = async () => {
+    if (!results) return;
+    try {
+      const backendUrl = import.meta.env.VITE_NEXO_BACKEND_URL || '';
+      const token = localStorage.getItem('nexo_token');
+      const response = await fetch(`${backendUrl}/api/cfo/export-excel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          process_spec: currentProcessSpec,
+          financial_spec: financialParams,
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        alert(`Error exportando Excel: ${err.detail || response.status}`);
+        return;
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Modelo_Financiero_${processType}_${Date.now()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export Excel error', e);
+      alert('Error de conexión al exportar Excel.');
+    }
+  };
+
   // Save as Task in Nexo Suite
   const handleSaveAsTask = () => {
     if (!onSaveTask || !results) return;
@@ -1046,6 +1117,14 @@ ${processType === 'chp' ? `## 5. Dictamen Forense: Detector de la Trampa de los 
               <Download className="w-4 h-4" />
               Descargar Memorando (.md)
             </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={!results}
+              className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm flex items-center gap-2 shadow-sm transition-all duration-150"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Exportar Excel (.xlsx)
+            </button>
             {onSaveTask && (
               <button
                 onClick={handleSaveAsTask}
@@ -1084,6 +1163,18 @@ ${processType === 'chp' ? `## 5. Dictamen Forense: Detector de la Trampa de los 
             >
               <Zap className="w-4 h-4 text-cyan-400" />
               Cogeneración CHP (500 kW)
+            </button>
+
+            <button
+              onClick={() => setProcessType('wte_rsu')}
+              className={`px-3.5 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${
+                processType === 'wte_rsu'
+                  ? 'bg-slate-900 text-white shadow'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Flame className="w-4 h-4 text-emerald-400" />
+              WTE-RSU (ISCC)
             </button>
 
             <button
@@ -1369,6 +1460,90 @@ ${processType === 'chp' ? `## 5. Dictamen Forense: Detector de la Trampa de los 
                     </div>
                   )}
 
+                  {processType === 'wte_rsu' && (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Capacidad Anual (t/año):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.annual_capacity_t.toLocaleString('es-ES')} t</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={5000}
+                          max={150000}
+                          step={5000}
+                          value={wteRsuParams.annual_capacity_t}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, annual_capacity_t: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Gate Fee (€/t):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.gate_fee_eur_ton} €/t</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={20}
+                          max={120}
+                          step={5}
+                          value={wteRsuParams.gate_fee_eur_ton}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, gate_fee_eur_ton: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Humedad Real (%):</span>
+                          <span className="font-mono text-emerald-600">{(wteRsuParams.actual_humidity * 100).toFixed(0)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={25}
+                          max={70}
+                          step={1}
+                          value={wteRsuParams.actual_humidity * 100}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, actual_humidity: Number(e.target.value) / 100 })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>PCI Base (MJ/kg):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.pci_base_mj_kg} MJ/kg</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={5}
+                          max={13}
+                          step={0.5}
+                          value={wteRsuParams.pci_base_mj_kg}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, pci_base_mj_kg: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Subvención No Reembolsable (%):</span>
+                          <span className="font-mono text-emerald-600">{(wteRsuParams.grant_fraction * 100).toFixed(0)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={70}
+                          step={5}
+                          value={wteRsuParams.grant_fraction * 100}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, grant_fraction: Number(e.target.value) / 100 })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {processType === 'custom' && (
                     <div className="space-y-4">
                       <div>
@@ -1482,6 +1657,74 @@ ${processType === 'chp' ? `## 5. Dictamen Forense: Detector de la Trampa de los 
               {/* SUBTAB 3: MARKET & TARIFFS */}
               {configSubTab === 'market' && (
                 <div className="space-y-4">
+                  {processType === 'wte_rsu' && (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Precio Electricidad (€/MWh):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.electricity_price_eur_mwh} €/MWh</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={20}
+                          max={150}
+                          step={5}
+                          value={wteRsuParams.electricity_price_eur_mwh}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, electricity_price_eur_mwh: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Precio Calor (€/MWh):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.heat_price_eur_mwh} €/MWh</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={5}
+                          max={80}
+                          step={5}
+                          value={wteRsuParams.heat_price_eur_mwh}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, heat_price_eur_mwh: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Precio GOs (€/MWh):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.go_price_eur_mwh} €/MWh</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={40}
+                          step={1}
+                          value={wteRsuParams.go_price_eur_mwh}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, go_price_eur_mwh: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold text-slate-700">
+                          <span>Precio Carbono (€/tCO₂e):</span>
+                          <span className="font-mono text-emerald-600">{wteRsuParams.carbon_price_eur_tco2e} €/t</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={5}
+                          value={wteRsuParams.carbon_price_eur_tco2e}
+                          onChange={e => setWteRsuParams({ ...wteRsuParams, carbon_price_eur_tco2e: Number(e.target.value) })}
+                          className="w-full mt-1.5 accent-emerald-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {processType === 'biochar' && (
                     <>
                       <div>

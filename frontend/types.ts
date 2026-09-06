@@ -1737,7 +1737,7 @@ export interface NexoConfig {
 // SDD CFO PROJECT FINANCE SPECIFICATION MODELS (Milestone 3)
 // ============================================================================
 
-export type IndustrialProcessType = 'biochar' | 'chp' | 'custom';
+export type IndustrialProcessType = 'biochar' | 'chp' | 'wte_rsu' | 'custom';
 
 export interface BiocharProcessParams {
   feedstock_input_t_day: number;
@@ -1771,6 +1771,27 @@ export interface ChpProcessParams {
   parasitic_cooling_kw_per_mw_dumped: number;
 }
 
+export interface WteRsuProcessParams {
+  annual_capacity_t: number;
+  capex_per_ton_year: number;
+  grant_fraction: number;
+  gate_fee_eur_ton: number;
+  opex_base_eur_ton: number;
+  opex_humidity_penalty_eur_ton_pct: number;
+  pci_base_mj_kg: number;
+  conversion_efficiency: number;
+  biogenic_fraction: number;
+  electricity_price_eur_mwh: number;
+  electricity_share: number;
+  heat_price_eur_mwh: number;
+  heat_share: number;
+  go_price_eur_mwh: number;
+  carbon_price_eur_tco2e: number;
+  co2_factor_tco2e_per_mwh: number;
+  design_humidity: number;
+  actual_humidity: number;
+}
+
 export interface IndustrialProcessSpec {
   process_type: IndustrialProcessType;
   name: string;
@@ -1780,6 +1801,7 @@ export interface IndustrialProcessSpec {
   variable_om_pct_revenue: number;
   biochar_params?: BiocharProcessParams | null;
   chp_params?: ChpProcessParams | null;
+  wte_rsu_params?: WteRsuProcessParams | null;
 }
 
 export interface FinancialParametersSpec {

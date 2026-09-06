@@ -17,6 +17,7 @@ class IndustrialProcessType(str, Enum):
     """Supported industrial process typologies in Nexo Sinérgico."""
     BIOCHAR = "biochar"
     CHP = "chp"
+    WTE_RSU = "wte_rsu"
     CUSTOM = "custom"
 
 
@@ -54,6 +55,31 @@ class ChpProcessParams(CfoBaseModel):
     parasitic_cooling_kw_per_mw_dumped: float = Field(25.0, ge=0.0, le=100.0, description="Parasitic cooling electric power per MW thermal dumped (kWe/MWth)")
 
 
+class WteRsuProcessParams(CfoBaseModel):
+    """Waste-to-Energy municipal solid waste (RSU) valorization with ISCC EU certification.
+
+    Revenue stack: gate fee + electricity + heat + Guarantees of Origin (GOs) + avoided CO2 credits.
+    """
+    annual_capacity_t: float = Field(50000.0, ge=1000.0, le=2000000.0, description="Annual MSW processing capacity (t/year)")
+    capex_per_ton_year: float = Field(100.0, ge=20.0, le=1000.0, description="Unit CAPEX (€/t of annual capacity)")
+    grant_fraction: float = Field(0.40, ge=0.0, le=0.90, description="Non-reimbursable grant fraction of CAPEX")
+    gate_fee_eur_ton: float = Field(50.0, ge=0.0, le=300.0, description="Gate fee per ton of MSW (€/t)")
+    opex_base_eur_ton: float = Field(30.0, ge=0.0, le=200.0, description="Base OPEX per ton processed (€/t)")
+    opex_humidity_penalty_eur_ton_pct: float = Field(2.0, ge=0.0, le=50.0, description="OPEX penalty per % humidity above design (€/t per %)")
+    pci_base_mj_kg: float = Field(9.5, ge=4.0, le=20.0, description="Base LHV of pre-treated MSW (MJ/kg)")
+    conversion_efficiency: float = Field(0.75, ge=0.4, le=0.95, description="Conversion efficiency to useful energy")
+    biogenic_fraction: float = Field(0.55, ge=0.0, le=1.0, description="Biogenic (C14) fraction for ISCC certification")
+    electricity_price_eur_mwh: float = Field(65.0, ge=10.0, le=400.0, description="Electricity sale price (€/MWh)")
+    electricity_share: float = Field(0.40, ge=0.0, le=1.0, description="Fraction of useful energy sold as electricity")
+    heat_price_eur_mwh: float = Field(30.0, ge=5.0, le=150.0, description="Heat sale price (€/MWh)")
+    heat_share: float = Field(0.60, ge=0.0, le=1.0, description="Fraction of useful energy sold as heat")
+    go_price_eur_mwh: float = Field(12.0, ge=0.0, le=100.0, description="Guarantees of Origin price (€/MWh renewable)")
+    carbon_price_eur_tco2e: float = Field(20.0, ge=0.0, le=300.0, description="Carbon credit price (€/t CO2e avoided)")
+    co2_factor_tco2e_per_mwh: float = Field(0.30, ge=0.0, le=1.5, description="Avoided CO2e per useful MWh (tCO2e/MWh)")
+    design_humidity: float = Field(0.40, ge=0.0, le=0.80, description="Design humidity threshold for OPEX penalty")
+    actual_humidity: float = Field(0.42, ge=0.0, le=0.80, description="Actual average humidity")
+
+
 class IndustrialProcessSpec(CfoBaseModel):
     """Standardized industrial process asset specification."""
     process_type: IndustrialProcessType = Field(IndustrialProcessType.BIOCHAR, description="Process typology")
@@ -64,6 +90,7 @@ class IndustrialProcessSpec(CfoBaseModel):
     variable_om_pct_revenue: float = Field(0.02, ge=0.0, le=0.30, description="Variable O&M as % of gross revenue")
     biochar_params: Optional[BiocharProcessParams] = Field(None, description="Biochar parameters if process_type=biochar")
     chp_params: Optional[ChpProcessParams] = Field(None, description="CHP parameters if process_type=chp")
+    wte_rsu_params: Optional[WteRsuProcessParams] = Field(None, description="WTE-RSU parameters if process_type=wte_rsu")
 
 
 class FinancialParametersSpec(CfoBaseModel):
@@ -248,6 +275,7 @@ __all__ = [
     "IndustrialProcessType",
     "BiocharProcessParams",
     "ChpProcessParams",
+    "WteRsuProcessParams",
     "IndustrialProcessSpec",
     "FinancialParametersSpec",
     "AnnualProjection",

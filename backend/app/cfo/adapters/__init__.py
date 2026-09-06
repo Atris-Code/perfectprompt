@@ -9,11 +9,13 @@ from app.cfo.adapters.base import IIndustrialProcessAdapter
 from app.cfo.adapters.biochar import BiocharAdapter
 from app.cfo.adapters.chp import ChpAdapter
 from app.cfo.adapters.custom import CustomAdapter
+from app.cfo.adapters.wte_rsu import WteRsuAdapter
 from app.cfo.specs import IndustrialProcessType
 
 _ADAPTER_REGISTRY: Dict[str, Type[IIndustrialProcessAdapter]] = {
     IndustrialProcessType.BIOCHAR.value: BiocharAdapter,
     IndustrialProcessType.CHP.value: ChpAdapter,
+    IndustrialProcessType.WTE_RSU.value: WteRsuAdapter,
     IndustrialProcessType.CUSTOM.value: CustomAdapter,
 }
 
@@ -47,6 +49,7 @@ __all__ = [
     "IIndustrialProcessAdapter",
     "BiocharAdapter",
     "ChpAdapter",
+    "WteRsuAdapter",
     "CustomAdapter",
     "register_adapter",
     "get_adapter",

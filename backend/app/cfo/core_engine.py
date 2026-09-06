@@ -500,6 +500,7 @@ def _calculate_sensitivities(
 ) -> Dict[str, SensitivityScenario]:
     """Evaluate Downside and Severe Stress macro scenarios."""
     is_biochar = process_spec.process_type == IndustrialProcessType.BIOCHAR
+    is_wte = process_spec.process_type == IndustrialProcessType.WTE_RSU
     
     if is_biochar:
         scenarios_defs = {
@@ -522,6 +523,31 @@ def _calculate_sensitivities(
                     "cost_feedstock_delta": 0.0,
                     "cost_opex_delta": 0.10,
                     "availability_delta": 0.0,
+                    "scenario": "stress"
+                }
+            }
+        }
+    elif is_wte:
+        scenarios_defs = {
+            "downside": {
+                "name": "Downside (-15% gate fee, -20% electricity, +5% humidity)",
+                "shocks": {
+                    "price_gate_fee_delta": -0.15,
+                    "price_electricity_delta": -0.20,
+                    "price_carbon_delta": -0.20,
+                    "humidity_delta": 0.05,
+                    "cost_opex_delta": 0.05,
+                    "scenario": "downside"
+                }
+            },
+            "stress": {
+                "name": "Stress (-30% gate fee, -35% electricity, +10% humidity)",
+                "shocks": {
+                    "price_gate_fee_delta": -0.30,
+                    "price_electricity_delta": -0.35,
+                    "price_carbon_delta": -0.40,
+                    "humidity_delta": 0.10,
+                    "cost_opex_delta": 0.10,
                     "scenario": "stress"
                 }
             }

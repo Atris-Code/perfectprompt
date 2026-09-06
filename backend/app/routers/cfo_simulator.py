@@ -8,14 +8,19 @@ Exposes institutional-grade Project Finance endpoints under Spec-Driven Design (
 - POST /api/cfo/export-memo: Comprehensive Executive Investment Committee Memorandum in Markdown.
 """
 
+import io
 from typing import Any, Dict, List, Optional, Union
+
 from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import Field
 
 from dependencies import get_current_user
 from models import User
 
+from app.cfo.adapters import get_adapter
 from app.cfo.core_engine import optimize_chp_pe, simulate_project_finance
+from app.cfo.excel_export import build_excel_report
 from app.cfo.memo_generator import export_memo, generate_investment_memo
 from app.cfo.pydantic_compat import CfoBaseModel, dump_model
 from app.cfo.specs import (
@@ -26,7 +31,10 @@ from app.cfo.specs import (
     IndustrialProcessSpec,
     IndustrialProcessType,
     SimulationResult,
+    WteRsuProcessParams,
 )
+
+from metrics import CFO_MEMO_EXPORTS, CFO_OPTIMIZE, CFO_SIMULATIONS
 
 router = APIRouter()
 
@@ -101,6 +109,8 @@ def _parse_simulation_payload(payload: Dict[str, Any]) -> tuple[IndustrialProces
             p_dict["biochar_params"] = nested_params
         elif proc_type == IndustrialProcessType.CHP:
             p_dict["chp_params"] = nested_params
+        elif proc_type == IndustrialProcessType.WTE_RSU:
+            p_dict["wte_rsu_params"] = nested_params
 
     # Convert nested parameter dicts into strongly typed models
     if proc_type == IndustrialProcessType.BIOCHAR:
@@ -113,6 +123,11 @@ def _parse_simulation_payload(payload: Dict[str, Any]) -> tuple[IndustrialProces
             p_dict["chp_params"] = ChpProcessParams(**p_dict["chp_params"])
         elif "chp_params" not in p_dict:
             p_dict["chp_params"] = ChpProcessParams()
+    elif proc_type == IndustrialProcessType.WTE_RSU:
+        if "wte_rsu_params" in p_dict and isinstance(p_dict["wte_rsu_params"], dict):
+            p_dict["wte_rsu_params"] = WteRsuProcessParams(**p_dict["wte_rsu_params"])
+        elif "wte_rsu_params" not in p_dict:
+            p_dict["wte_rsu_params"] = WteRsuProcessParams()
 
     # Provide safe fallback fixed_capex if omitted
     if "fixed_capex" not in p_dict or p_dict["fixed_capex"] is None:
@@ -120,6 +135,9 @@ def _parse_simulation_payload(payload: Dict[str, Any]) -> tuple[IndustrialProces
             p_dict["fixed_capex"] = 3_200_000.0
         elif proc_type == IndustrialProcessType.CHP:
             p_dict["fixed_capex"] = 2_250_000.0
+        elif proc_type == IndustrialProcessType.WTE_RSU:
+            wp = p_dict.get("wte_rsu_params")
+            p_dict["fixed_capex"] = wp.capex_per_ton_year * wp.annual_capacity_t * (1.0 - wp.grant_fraction)
         else:
             p_dict["fixed_capex"] = 1_000_000.0
 
@@ -170,6 +188,14 @@ def get_processes(current_user: User = Depends(get_current_user)) -> Dict[str, A
         "variable_om_pct_revenue": 0.02,
     }
 
+    wte_defaults = WteRsuProcessParams().to_dict()
+    wte_defaults.update({
+        "fixed_capex": 3_000_000.0,
+        "nwc": 150_000.0,
+        "fixed_om_eur_year": 250_000.0,
+        "variable_om_pct_revenue": 0.02,
+    })
+
     return {
         "processes": [
             {
@@ -183,6 +209,12 @@ def get_processes(current_user: User = Depends(get_current_user)) -> Dict[str, A
                 "name": "Cogeneración Industrial CHP (Combined Heat & Power)",
                 "description": "Planta de cogeneración de alta eficiencia con turbina/motor de gas y recuperación de calor industrial.",
                 "default_params": chp_defaults,
+            },
+            {
+                "id": "wte_rsu",
+                "name": "Waste-to-Energy RSU (ISCC EU)",
+                "description": "Valorización energética de residuos sólidos urbanos con certificación ISCC: gate fee, electricidad, calor, GOs y créditos de CO₂.",
+                "default_params": wte_defaults,
             },
             {
                 "id": "custom",
@@ -207,6 +239,7 @@ def simulate(payload: Dict[str, Any] = Body(...), current_user: User = Depends(g
     """
     try:
         process_spec, financial_spec = _parse_simulation_payload(payload)
+        CFO_SIMULATIONS.labels(scenario=process_spec.process_type.value).inc()
         result: SimulationResult = simulate_project_finance(process_spec, financial_spec)
 
         data = dump_model(result)
@@ -242,6 +275,7 @@ def optimize_pe(payload: Dict[str, Any] = Body(...), current_user: User = Depend
     Identifies the optimal plateau and forensically detects the -812 kW oversizing trap.
     """
     try:
+        CFO_OPTIMIZE.inc()
         pe_min = float(payload.get("pe_range_min_kw", payload.get("pe_min", 200.0)))
         pe_max = float(payload.get("pe_range_max_kw", payload.get("pe_max", 1000.0)))
         pe_step = float(payload.get("pe_step_kw", payload.get("pe_step", 50.0)))
@@ -282,6 +316,7 @@ def export_memo_endpoint(payload: Dict[str, Any] = Body(...), current_user: User
     """
     try:
         process_spec, financial_spec = _parse_simulation_payload(payload)
+        CFO_MEMO_EXPORTS.inc()
         memo_dict = export_memo(process_spec, financial_spec)
         return memo_dict
 
@@ -289,4 +324,30 @@ def export_memo_endpoint(payload: Dict[str, Any] = Body(...), current_user: User
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Memorandum export error: {str(e)}",
+        ) from e
+
+
+@router.post(
+    "/export-excel",
+    summary="Export Project Finance Model to Excel",
+    description="Runs the simulation and returns a multi-sheet .xlsx report with inputs, revenue stack, cash flow waterfall, sensitivities and KPIs.",
+)
+def export_excel(payload: Dict[str, Any] = Body(...), current_user: User = Depends(get_current_user)):
+    """Generate a downloadable .xlsx report from the simulation engine."""
+    try:
+        process_spec, financial_spec = _parse_simulation_payload(payload)
+        result = simulate_project_finance(process_spec, financial_spec)
+        adapter = get_adapter(process_spec.process_type)
+        _, _, revenue_details = adapter.compute_revenue_opex(process_spec, scenario_shock=None)
+        xlsx_bytes = build_excel_report(process_spec, financial_spec, result, revenue_details)
+        filename = f"modelo_financiero_{process_spec.process_type.value}.xlsx"
+        return StreamingResponse(
+            io.BytesIO(xlsx_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Excel export error: {str(e)}",
         ) from e

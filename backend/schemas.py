@@ -37,6 +37,13 @@ class TokenResponse(BaseModel):
     token_type: str
     roles: List[str]
     user_name: str
+    refresh_token: str
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str
 
 # --- NEXO SYNERGIC BRIDGE SCHEMAS ---
 

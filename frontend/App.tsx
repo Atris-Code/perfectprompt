@@ -3,7 +3,10 @@ import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react
 import { ViewSelector } from './components/ViewSelector';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { Login } from './components/Login';
+import { LandingPage } from './components/LandingPage';
+import { Dashboard } from './components/Dashboard';
 import { MarcoAvatar } from './components/MarcoAvatar';
+import { logout } from './services/authClient';
 const AboutModal = React.lazy(() => import('./components/AboutModal'));
 const AgentChatModal = React.lazy(() => import('./components/AgentChatModal'));
 
@@ -69,6 +72,7 @@ const ExpertCommandCenter = React.lazy(() => import('./components/tools/ExpertCo
 const CinematicAuditPanel = React.lazy(() => import('./components/tools/CinematicAuditPanel').then(module => ({ default: module.CinematicAuditPanel })));
 const AdminConsole = React.lazy(() => import('./components/AdminConsole').then(module => ({ default: module.AdminConsole })));
 const GaiaLab = React.lazy(() => import('./components/tools/GaiaLab').then(module => ({ default: module.GaiaLab })));
+const CfoFinanceSimulator = React.lazy(() => import('./components/CfoFinanceSimulator'));
 
 import { TaskManager as COPRESETManager, type COPRESETPayload } from './services/taskManager';
 import { OFF_STATE } from './data/hmiConstants';
@@ -165,15 +169,17 @@ export const App: React.FC = () => {
 
 
 
-  const handleLogout = () => {
-    localStorage.removeItem('nexo_token');
+  const handleLogout = async () => {
+    await logout();
+    setAuthToken(null);
     setIsAuthenticated(false);
+    setCurrentUser(null);
   };
 
   // --- NAVIGATION & HISTORY MANAGEMENT ---
   const [view, setView] = useState<View>(() => {
     const hash = window.location.hash.replace('#', '');
-    return (hash as View) || 'creator';
+    return (hash as View) || 'dashboard';
   });
 
   // Sync URL with View State
@@ -1641,12 +1647,14 @@ Insight: ${payload.insight}`;
       case 'innovation-forge': return <InnovationForge coPresets={MOCK_CO_PRESETS} reactors={MOCK_REACTORS} addEvent={(m) => console.log('[IF]', m)} apiKey={API_KEY} onSaveTask={handleSaveTask} />;
       case 'nexo-bridge': return <NexoBridgeView />;
       case 'admin-console': return authToken ? <AdminConsole token={authToken} onClose={() => setView('manifesto')} /> : <Login onLogin={handleLogin} />;
+      case 'cfo-finance-simulator': return <CfoFinanceSimulator onSaveTask={handleSaveTask} setView={setView} />;
+      case 'dashboard': return <Dashboard user={currentUser} setView={setView} />;
       default: return <Manifesto />;
     }
   };
 
   if (!authToken) {
-    return <Login onLogin={handleLogin} />;
+    return <LandingPage onLogin={handleLogin} />;
   }
 
   return (
@@ -1654,7 +1662,7 @@ Insight: ${payload.insight}`;
       <aside className={`${sidebarOpen ? 'block' : 'hidden'} md:block w-64 bg-white flex-shrink-0 p-4 border-r border-gray-200 overflow-y-auto`}>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-gray-800">Nexo Sinérgico</h1>
-          <button onClick={() => setAuthToken(null)} className="text-gray-500 hover:text-red-600 mr-2" aria-label="Logout" title="Cerrar Sesión">
+          <button onClick={handleLogout} className="text-gray-500 hover:text-red-600 mr-2" aria-label="Logout" title="Cerrar Sesión">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>

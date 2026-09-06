@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt
@@ -30,3 +31,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     # Sign the token
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+def generate_refresh_token() -> str:
+    """Genera un refresh token opaco (no JWT) de alta entropía."""
+    return secrets.token_urlsafe(48)

@@ -13,8 +13,10 @@
  *   const desc  = await describeImage(base64, mimeType, prompt);
  */
 
+import { authFetch } from './authClient';
+
 export const BACKEND_URL: string =
-  import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+  import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
 export function getAuthToken(): string | null {
   try {
@@ -24,18 +26,10 @@ export function getAuthToken(): string | null {
   }
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BACKEND_URL}${path}`, {
+  const res = await authFetch(`${BACKEND_URL}${path}`, {
     method: 'POST',
-    headers: authHeaders(),
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) {

@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
 
+    # --- OAuth Google (Sign in with Google) ---
+    # Client ID de Google Cloud Console (OAuth 2.0 / Web client).
+    # Debe coincidir con el `aud` del ID token. Ver /auth/google.
+    GOOGLE_CLIENT_ID: str = ""
+
     # --- Credenciales semilla (SOLO desarrollo) ---
     # En producción, sobrescribir por variables de entorno (NEXO_* / DEMO_*).
     DEMO_EMAIL: str = "cientifico@nexo.com"

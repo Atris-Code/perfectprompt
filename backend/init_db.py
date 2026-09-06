@@ -22,7 +22,8 @@ def init_db():
             {"name": "Operador", "description": "Acceso de escritura y ejecución en Pyrolysis Hub (Ala Analítica)."},
             {"name": "Viewer", "description": "Acceso de solo lectura a reportes finales y dashboards."},
             {"name": "Academico", "description": "Acceso a datos crudos y exportación científica, validación de modelos."},
-            {"name": "Colaborador", "description": "Acceso principal al Creador de Prompt (Ala Creativa) y edición de narrativa."}
+            {"name": "Colaborador", "description": "Acceso principal al Creador de Prompt (Ala Creativa) y edición de narrativa."},
+            {"name": "Auditor", "description": "Acceso al panel de auditoría financiera (Kairos) y revisión de viabilidad STO."}
         ]
 
         for r_data in roles_data:

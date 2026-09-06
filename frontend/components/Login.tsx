@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import { setTokens } from '../services/authClient';
+import { GoogleLoginButton } from './GoogleLoginButton';
 
 interface LoginProps {
   onLogin: (token: string) => void;
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState('cientifico@nexo.com');
-  const [password, setPassword] = useState('ciencia123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +19,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
 
     try {
-      const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+      const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -28,6 +30,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       if (response.ok) {
         const data = await response.json();
+        setTokens(data.access_token, data.refresh_token ?? null);
         onLogin(data.access_token);
       } else {
         const errData = await response.json();
@@ -68,6 +71,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Identidad Digital (Email)</label>
             <input
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
@@ -81,6 +85,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all pr-10"
@@ -90,6 +95,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 focus:outline-none"
               >
                 {showPassword ? (
@@ -123,6 +129,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               'Iniciar Sesión'
             )}
           </button>
+
+          <GoogleLoginButton onLogin={onLogin} />
 
           <div className="text-center">
             <a href="#" className="text-xs text-slate-500 hover:text-cyan-400 transition-colors">

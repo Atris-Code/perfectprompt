@@ -9,6 +9,28 @@ export default defineConfig(() => {
         port: 3000,
         host: '127.0.0.1',
         middlewareMode: false,
+        proxy: {
+          '/api': {
+            target: 'http://127.0.0.1:8001',
+            changeOrigin: true,
+          },
+          '/auth': {
+            target: 'http://127.0.0.1:8001',
+            changeOrigin: true,
+          },
+          '/creative': {
+            target: 'http://127.0.0.1:8001',
+            changeOrigin: true,
+          },
+          '/admin': {
+            target: 'http://127.0.0.1:8001',
+            changeOrigin: true,
+          },
+          '/assistants': {
+            target: 'http://127.0.0.1:8001',
+            changeOrigin: true,
+          }
+        }
       },
       plugins: [react()],
       resolve: {

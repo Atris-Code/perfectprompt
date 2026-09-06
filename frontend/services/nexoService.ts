@@ -22,7 +22,7 @@ export async function getKairosFinancialVerdict(
     // If no token, we might want to fallback or throw. For now, let's try to proceed or throw.
     // Given the app structure, this is likely called from an authenticated context.
     
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
     try {
         const response = await fetch(`${BASE_URL}/api/nexo/kairos_verdict`, {
@@ -1118,7 +1118,7 @@ export async function generateNexoResponse(
     mode: 'text' | 'image' = 'text'
 ): Promise<string> {
     const token = localStorage.getItem('nexo_token');
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
     if (!token) {
         return "Error: No estás autenticado. Por favor inicia sesión para usar Nexo Bridge.";
@@ -1174,7 +1174,7 @@ function fromBackendAssistant(b: any): Assistant {
 
 export async function createAssistant(assistantData: Omit<Assistant, 'id' | 'created_at'>): Promise<Assistant> {
     const token = localStorage.getItem('nexo_token');
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
     const payload = {
         name: assistantData.name,
@@ -1203,7 +1203,7 @@ export async function createAssistant(assistantData: Omit<Assistant, 'id' | 'cre
 
 export async function getAssistants(ownerTitanId?: string): Promise<Assistant[]> {
     const token = localStorage.getItem('nexo_token');
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
     
     let url = `${BASE_URL}/assistants/`;
     if (ownerTitanId) {
@@ -1227,7 +1227,7 @@ export async function getAssistants(ownerTitanId?: string): Promise<Assistant[]>
 
 export async function updateAssistant(assistantId: string, updates: Partial<Assistant>): Promise<Assistant> {
     const token = localStorage.getItem('nexo_token');
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
     const payload: Record<string, unknown> = {};
     if (updates.name !== undefined) payload.name = updates.name;
@@ -1255,7 +1255,7 @@ export async function updateAssistant(assistantId: string, updates: Partial<Assi
 
 export async function deleteAssistant(assistantId: string): Promise<void> {
     const token = localStorage.getItem('nexo_token');
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
     const response = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
         method: 'DELETE',

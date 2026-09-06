@@ -350,7 +350,7 @@ export const Phoenix: React.FC<PhoenixProps> = ({ phoenixState, setPhoenixState,
         setInsightError('');
 
         try {
-            const nexoBackendUrl = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+            const nexoBackendUrl = import.meta.env.VITE_NEXO_BACKEND_URL || '';
 
             const payload = {
                 timestamp: new Date().toISOString(),

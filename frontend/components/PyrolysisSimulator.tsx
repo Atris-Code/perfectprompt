@@ -40,7 +40,7 @@ const PyrolysisSimulator: React.FC<PyrolysisSimulatorProps> = ({ onNavigateWithC
 
   // Cargar materiales al inicio
   useEffect(() => {
-    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
     const token = localStorage.getItem('nexo_token');
     fetch(`${BASE_URL}/api/materials`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -106,7 +106,7 @@ const PyrolysisSimulator: React.FC<PyrolysisSimulatorProps> = ({ onNavigateWithC
           residenceTime
       };
 
-      const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || 'http://localhost:8000';
+      const BASE_URL = import.meta.env.VITE_NEXO_BACKEND_URL || '';
       const token = localStorage.getItem('nexo_token');
       fetch(`${BASE_URL}/api/simulate`, {
           method: 'POST',

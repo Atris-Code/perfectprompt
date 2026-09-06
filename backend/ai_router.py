@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 import ai_provider
 from dependencies import get_current_user
 from models import User
+from metrics import track_ai
 
 router = APIRouter(prefix="/api/ai", tags=["AI Provider"])
 
@@ -67,6 +68,7 @@ def _require_auth(current_user: User = Depends(get_current_user)) -> User:
 
 
 @router.post("/text")
+@track_ai("text")
 def ai_text(req: TextRequest, _: User = Depends(_require_auth)):
     try:
         return {"text": ai_provider.generate_text(req.system, req.prompt, req.model)}
@@ -75,6 +77,7 @@ def ai_text(req: TextRequest, _: User = Depends(_require_auth)):
 
 
 @router.post("/json")
+@track_ai("json")
 def ai_json(req: JSONRequest, _: User = Depends(_require_auth)):
     try:
         return {"json": ai_provider.generate_json(req.system, req.prompt, req.json_schema, req.model)}
@@ -83,6 +86,7 @@ def ai_json(req: JSONRequest, _: User = Depends(_require_auth)):
 
 
 @router.post("/chat")
+@track_ai("chat")
 def ai_chat(req: ChatRequest, _: User = Depends(_require_auth)):
     try:
         return {"text": ai_provider.chat_completion(req.messages, req.system, req.model)}
@@ -91,6 +95,7 @@ def ai_chat(req: ChatRequest, _: User = Depends(_require_auth)):
 
 
 @router.post("/image")
+@track_ai("image")
 def ai_image(req: ImageRequest, _: User = Depends(_require_auth)):
     try:
         return {"image": ai_provider.generate_image(req.prompt, req.size)}
@@ -99,6 +104,7 @@ def ai_image(req: ImageRequest, _: User = Depends(_require_auth)):
 
 
 @router.post("/speech")
+@track_ai("speech")
 def ai_speech(req: SpeechRequest, _: User = Depends(_require_auth)):
     try:
         return {"audio": ai_provider.generate_speech(req.text, req.voice)}
@@ -107,6 +113,7 @@ def ai_speech(req: SpeechRequest, _: User = Depends(_require_auth)):
 
 
 @router.post("/vision")
+@track_ai("vision")
 def ai_vision(req: VisionRequest, _: User = Depends(_require_auth)):
     try:
         return {"text": ai_provider.describe_image(req.image_b64, req.mime_type, req.prompt, req.system)}

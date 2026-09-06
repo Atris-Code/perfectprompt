@@ -24,6 +24,14 @@ from ai_router import router as ai_router, nexo_router
 from app.routers import cfo_simulator
 from config import settings
 from prometheus_fastapi_instrumentator import Instrumentator
+from metrics import (
+    ACTIVE_SESSIONS,
+    LOGIN_ATTEMPTS,
+    LOGIN_FAILURES,
+    LOGIN_SUCCESS,
+    LOGOUT_TOTAL,
+    REFRESH_TOTAL,
+)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -67,13 +75,16 @@ def login_for_access_token(
     Verifies credentials and issues a JWS signed with the user's token version.
     """
     # 1. Find user by email
+    LOGIN_ATTEMPTS.labels(provider="credentials").inc()
     user = db.query(User).filter(User.email == form_data.email).first()
 
     # 2. Security Validations
     if not user or not verify_password(form_data.password, user.password_hash):
+        LOGIN_FAILURES.labels(provider="credentials").inc()
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
         
     if not user.is_active:
+        LOGIN_FAILURES.labels(provider="credentials").inc()
         raise HTTPException(status_code=403, detail="Usuario inactivo. Contacte al Admin.")
 
     # 3. Prepare Token Payload (Data Fusion)
@@ -100,6 +111,8 @@ def login_for_access_token(
         expires_at=datetime.utcnow() + timedelta(days=30)
     ))
     db.commit()
+    LOGIN_SUCCESS.labels(provider="credentials").inc()
+    ACTIVE_SESSIONS.set(db.query(RefreshToken).filter(RefreshToken.expires_at > datetime.utcnow()).count())
 
     # 5. Audit Log (Background)
     background_tasks.add_task(
@@ -128,10 +141,12 @@ def refresh_access_token(payload: RefreshRequest, db: Session = Depends(get_db))
     """
     rt = db.query(RefreshToken).filter(RefreshToken.token == payload.refresh_token).first()
     if not rt:
+        REFRESH_TOTAL.labels(status="error").inc()
         raise HTTPException(status_code=401, detail="Refresh token inválido")
     if rt.expires_at < datetime.utcnow():
         db.delete(rt)
         db.commit()
+        REFRESH_TOTAL.labels(status="error").inc()
         raise HTTPException(status_code=401, detail="Refresh token expirado")
 
     user = db.query(User).filter(User.id == rt.user_id).first()
@@ -155,6 +170,8 @@ def refresh_access_token(payload: RefreshRequest, db: Session = Depends(get_db))
     db.delete(rt)
     db.add(RefreshToken(token=new_refresh_token, user_id=user.id, expires_at=datetime.utcnow() + timedelta(days=30)))
     db.commit()
+    REFRESH_TOTAL.labels(status="ok").inc()
+    ACTIVE_SESSIONS.set(db.query(RefreshToken).filter(RefreshToken.expires_at > datetime.utcnow()).count())
 
     return {
         "access_token": access_token,
@@ -174,6 +191,8 @@ def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
     if rt:
         db.delete(rt)
         db.commit()
+    LOGOUT_TOTAL.inc()
+    ACTIVE_SESSIONS.set(db.query(RefreshToken).filter(RefreshToken.expires_at > datetime.utcnow()).count())
     return {"message": "Sesión cerrada correctamente"}
 
 
@@ -192,7 +211,9 @@ def login_google(
     comprueba el `aud` (GOOGLE_CLIENT_ID). Si el correo no existe, crea un usuario
     con el rol mínimo "Colaborador".
     """
+    LOGIN_ATTEMPTS.labels(provider="google").inc()
     if not settings.GOOGLE_CLIENT_ID:
+        LOGIN_FAILURES.labels(provider="google").inc()
         raise HTTPException(status_code=503, detail="OAuth Google no configurado (GOOGLE_CLIENT_ID)")
 
     try:
@@ -203,16 +224,20 @@ def login_google(
             payload.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
         )
     except ImportError:
+        LOGIN_FAILURES.labels(provider="google").inc()
         raise HTTPException(status_code=503, detail="Dependencia 'google-auth' no instalada en el backend")
     except Exception as e:
+        LOGIN_FAILURES.labels(provider="google").inc()
         raise HTTPException(status_code=401, detail=f"ID token de Google inválido: {e}")
 
     iss = idinfo.get("iss", "")
     if iss not in ("accounts.google.com", "https://accounts.google.com"):
+        LOGIN_FAILURES.labels(provider="google").inc()
         raise HTTPException(status_code=401, detail="Emisor de token no confiable")
 
     email = idinfo.get("email")
     if not email or not idinfo.get("email_verified"):
+        LOGIN_FAILURES.labels(provider="google").inc()
         raise HTTPException(status_code=401, detail="Correo de Google no verificado")
 
     name = idinfo.get("name") or email.split("@")[0]
@@ -235,6 +260,7 @@ def login_google(
         db.refresh(user)
 
     if not user.is_active:
+        LOGIN_FAILURES.labels(provider="google").inc()
         raise HTTPException(status_code=403, detail="Usuario inactivo. Contacte al Admin.")
 
     role_names = [role.name for role in user.roles]
@@ -250,6 +276,8 @@ def login_google(
         expires_at=datetime.utcnow() + timedelta(days=30)
     ))
     db.commit()
+    LOGIN_SUCCESS.labels(provider="google").inc()
+    ACTIVE_SESSIONS.set(db.query(RefreshToken).filter(RefreshToken.expires_at > datetime.utcnow()).count())
 
     background_tasks.add_task(
         log_action_background,

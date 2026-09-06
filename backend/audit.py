@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import AuditLog
+from metrics import AUDIT_EVENTS
 import json
 import logging
 
@@ -34,6 +35,7 @@ def log_action_background(actor_id: str, action_type: str, target_id: str = None
         
         db.add(audit_entry)
         db.commit()
+        AUDIT_EVENTS.labels(action_type=action_type).inc()
         logger.info(f"AUDIT LOG: {action_type} by {actor_id} on {target_id}")
         
     except Exception as e:

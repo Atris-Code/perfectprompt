@@ -45,3 +45,6 @@ postgres_data/
 
 # Bases de datos SQLite (regeneradas con seed_materials.py)
 *.db
+
+# Carpeta de propuestas en revisión
+Temp/

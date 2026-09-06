@@ -8,6 +8,7 @@ import { CLASSIFIED_STYLES } from '../../data/styles';
 import InspirationWall from '../InspirationWall';
 import { useTranslations } from '../../contexts/LanguageContext';
 import { PRESETS } from '../../data/presets';
+import { pdfToText } from '../../services/pdf';
 import { StyleSearchInput } from './StyleSearchInput';
 import { ALL_DOCUMENTARY_PRESETS, CLASSIFIED_DOCUMENTARY_PRESETS } from '../../data/documentaryPresets';
 import { CLASSIFIED_GENRE_PRESETS } from '../../data/genrePresets';
@@ -378,16 +379,8 @@ export const SpecificFields: React.FC<SpecificFieldsProps> = ({
     try {
         let content = '';
         if (file.type === 'application/pdf') {
-            if (typeof window.pdfjsLib === 'undefined' || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                throw new Error("PDF.js no se ha cargado correctamente.");
-            }
             const arrayBuffer = await file.arrayBuffer();
-            const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                content += textContent.items.map((item: any) => item.str).join(' ');
-            }
+            content = await pdfToText(arrayBuffer);
         } else if (file.type.startsWith('text/')) {
             content = await file.text();
         } else {

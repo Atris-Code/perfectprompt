@@ -3,6 +3,7 @@ import { Accordion } from './form/Accordion';
 import { KNOWLEDGE_BASE } from '../data/knowledgeBase';
 import { extractMaterialFromDocument } from '../services/nexoService';
 import type { PyrolysisMaterial } from '../types';
+import { pdfToText } from '../services/pdf';
 
 // FIX: Removed redundant global declaration for 'pdfjsLib' which is now centralized in types.ts.
 
@@ -194,22 +195,10 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ sources, onAddSour
             if (file.type === 'application/pdf') {
               reader.onload = async (event) => {
                 try {
-                  // FIX: Use window.pdfjsLib as it's defined on the global window object.
-                  if (typeof window.pdfjsLib === 'undefined' || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                    throw new Error("La librería PDF.js no se ha cargado correctamente. Comprueba tu conexión a internet.");
-                  }
                   const arrayBuffer = event.target?.result;
                   if (!arrayBuffer) return reject(new Error("No se pudo leer el archivo PDF."));
                   
-                  // FIX: Use window.pdfjsLib as it's defined on the global window object.
-                  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer as ArrayBuffer }).promise;
-                  let fullText = '';
-                  for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map((item: any) => item.str).join(' ');
-                    fullText += pageText + '\n\n';
-                  }
+                  const fullText = await pdfToText(arrayBuffer as ArrayBuffer);
                   resolve({ name: file.name, content: fullText });
                 } catch (error) {
                   console.error("Error al procesar PDF:", error);

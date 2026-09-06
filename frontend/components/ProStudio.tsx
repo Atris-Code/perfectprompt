@@ -6,7 +6,9 @@ import { FormInput, FormTextarea, FormSelect } from './form/FormControls';
 import MetadataDisplay from './MetadataDisplay';
 import { ProStudioReportPDF } from './pdf/ProStudioReportPDF';
 
-// FIX: Removed redundant global declarations for 'exifr' and 'html2canvas' which are already centralized in types.ts.
+import * as exifr from 'exifr';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface ProStudioProps {
     formData: ProFormData;
@@ -49,21 +51,9 @@ export const ProStudio: React.FC<ProStudioProps> = ({
         setIsParsing(true);
 
         try {
-            // Wait for exifr library to load (with timeout)
-            let retries = 0;
-            const maxRetries = 10;
-            while (typeof window.exifr === 'undefined' && retries < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                retries++;
-            }
-
-            if (typeof window.exifr === 'undefined') {
-                throw new Error("La librería de metadatos (exifr) no se pudo cargar desde el CDN. Verifica tu conexión a internet y recarga la página (F5).");
-            }
-
             // Read file into an ArrayBuffer for more robust parsing
             const buffer = await file.arrayBuffer();
-            const data = await window.exifr.parse(buffer, true); // Force full parsing
+            const data = await exifr.parse(buffer, true); // Force full parsing
             if (!data || Object.keys(data).length === 0) {
                 throw new Error('No se encontraron metadatos EXIF en este archivo. Los archivos de imagen deben contener información EXIF (la mayoría de fotos de cámaras y smartphones lo tienen).');
             }
@@ -132,11 +122,6 @@ export const ProStudio: React.FC<ProStudioProps> = ({
 
     const handleDownloadPDF = async () => {
         if (!generatedPrompt) return;
-        if (typeof window.html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-            setMetadataError("Las librerías para generar PDF no se cargaron correctamente. Comprueba tu conexión a internet y refresca la página.");
-            return;
-        }
-
         setIsDownloadingPDF(true);
         setShowPDFPreview(true);
         await new Promise(resolve => setTimeout(resolve, 100)); // wait for hidden component to render
@@ -150,13 +135,12 @@ export const ProStudio: React.FC<ProStudioProps> = ({
         }
 
         try {
-            const canvas = await window.html2canvas(pdfContentElement, {
+            const canvas = await html2canvas(pdfContentElement, {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: '#ffffff',
             });
             const imgData = canvas.toDataURL('image/png', 1.0);
-            const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();

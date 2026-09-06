@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import type { MapClickPayload, Task } from '../types';
 
-declare var L: any;
+import * as L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface MapComponentProps {
   onMapClick: (payload: MapClickPayload) => void;
@@ -17,13 +18,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({ onMapClick, tasks = 
 
   useEffect(() => {
     if (mapContainerRef.current && !mapRef.current) {
-      if (typeof L === 'undefined') {
-          console.error("Leaflet library (L) not loaded.");
-          if (mapContainerRef.current) {
-              mapContainerRef.current.innerHTML = '<p class="text-center text-red-500 p-4">Error: No se pudo cargar la librería del mapa. Por favor, revisa tu conexión a internet.</p>';
-          }
-          return;
-      }
       const map = L.map(mapContainerRef.current).setView([20, 0], 2);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

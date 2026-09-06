@@ -12,12 +12,6 @@ declare global {
 
   interface Window {
     aistudio?: AIStudio;
-    jspdf: any;
-    html2canvas: any;
-    exifr: any;
-    // FIX: Moved pdfjsLib here to be a true global on the window object, resolving 'Cannot find name' errors.
-    pdfjsLib: any;
-    $3Dmol: any;
   }
 }
 

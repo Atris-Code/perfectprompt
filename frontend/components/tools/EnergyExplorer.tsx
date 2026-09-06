@@ -9,7 +9,7 @@ import { ContentType } from '../../types';
 import { useTranslations } from '../../contexts/LanguageContext';
 import { Accordion } from '../form/Accordion';
 
-declare var html2canvas: any;
+import html2canvas from 'html2canvas';
 
 interface EnergyExplorerProps {
     onSaveTask: (task: Task) => void;

@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import type { Assistant } from '../types';
 import { FormInput, FormTextarea } from './form/FormControls';
+import { pdfToText as extractPdfText } from '../services/pdf';
 
 const pdfToText = async (file: File): Promise<string> => {
-    if (typeof window.pdfjsLib === 'undefined' || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        throw new Error("La librería PDF.js no se ha cargado correctamente.");
-    }
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        fullText += textContent.items.map((item: any) => item.str).join(' ') + '\n\n';
-    }
-    return fullText.trim();
+    return extractPdfText(await file.arrayBuffer());
 };
 
 export const AssistantModal: React.FC<{

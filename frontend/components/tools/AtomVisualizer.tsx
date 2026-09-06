@@ -3,11 +3,7 @@ import type { PeriodicElement, Task } from '../../types';
 import { ContentType, EventType } from '../../types';
 import { Accordion } from '../form/Accordion';
 
-declare global {
-  interface Window {
-    $3Dmol: any;
-  }
-}
+import * as $3Dmol from '3dmol';
 
 interface AtomVisualizerProps {
     element: PeriodicElement;
@@ -52,7 +48,7 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
         try {
             if (!viewer || !elem) return;
             
-            const elementColor = window.$3Dmol?.elementColors?.Jmol?.[elem.simbolo] || 0x808080;
+            const elementColor = $3Dmol?.elementColors?.Jmol?.[elem.simbolo] || 0x808080;
             
             if (special === 'noble') {
                 // Noble gas: show as sphere with outer shell
@@ -96,12 +92,6 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
                     return;
                 }
 
-                // Double check for library availability
-                if (typeof window.$3Dmol === 'undefined') {
-                    setError("La librería de visualización 3D no se ha cargado. Por favor, recarga la página.");
-                    setIsLoading(false);
-                    return;
-                }
 
                 try {
                     if (containerRef.current) {
@@ -122,8 +112,8 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
                              throw new Error("WebGL no disponible");
                         }
                         
-                        viewer = window.$3Dmol.createViewer(containerRef.current, {
-                            defaultcolors: window.$3Dmol.elementColors.Jmol,
+                        viewer = $3Dmol.createViewer(containerRef.current, {
+                            defaultcolors: $3Dmol.elementColors.Jmol,
                             backgroundColor: bgColor,
                         });
                     } catch (creationError) {
@@ -159,7 +149,7 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
 
                     if (cid) {
                         // Start download
-                        const downloadPromise = window.$3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'});
+                        const downloadPromise = $3Dmol.download(`cid:${cid}`, viewer, {format: 'sdf'});
                         
                         // Handle output which might be a Promise or undefined depending on version
                         if (downloadPromise && typeof downloadPromise.then === 'function') {
@@ -261,16 +251,16 @@ export const AtomVisualizer: React.FC<AtomVisualizerProps> = ({ element, onSaveT
 
             switch (surfaceStyle) {
                 case 'dots':
-                    viewer.addSurface(window.$3Dmol.SurfaceType.VDW, { style: 'dots' });
+                    viewer.addSurface($3Dmol.SurfaceType.VDW, { style: 'dots' });
                     break;
                 case 'vdw':
-                    surfaceType = window.$3Dmol.SurfaceType.VDW;
+                    surfaceType = $3Dmol.SurfaceType.VDW;
                     break;
                 case 'sas':
-                    surfaceType = window.$3Dmol.SurfaceType.SAS;
+                    surfaceType = $3Dmol.SurfaceType.SAS;
                     break;
                 case 'ms':
-                    surfaceType = window.$3Dmol.SurfaceType.MS;
+                    surfaceType = $3Dmol.SurfaceType.MS;
                     break;
             }
             if (surfaceType) {

@@ -6,6 +6,8 @@ import CreateSkillModuleModal from './CreateSkillModuleModal';
 import { executeSkillModule, createAssistant, getAssistants, updateAssistant, deleteAssistant, initializeAgentChat } from '../services/nexoService';
 import { FormInput } from './form/FormControls';
 import { ChatPanel } from './ChatPanel';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface TitanWorkspaceProps {
     titan: CharacterProfile;
@@ -214,14 +216,8 @@ export const TitanWorkspace: React.FC<TitanWorkspaceProps> = ({ titan, onUpdateT
         const element = document.getElementById(`result-content-${skillId}`);
         if (!element) return;
         
-        if (typeof window.html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-            alert("Las librerías para generar PDF no se cargaron correctamente. Comprueba tu conexión a internet y refresca la página.");
-            return;
-        }
         
-        const { jsPDF } = window.jspdf;
-
-        const canvas = await window.html2canvas(element, {
+        const canvas = await html2canvas(element, {
             scale: 2,
             backgroundColor: '#1f2937' // bg-gray-800
         });

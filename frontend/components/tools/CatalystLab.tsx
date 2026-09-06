@@ -6,11 +6,7 @@ import { Accordion } from '../form/Accordion';
 import { FormInput } from '../form/FormControls';
 import { KNOWLEDGE_BASE } from '../../data/knowledgeBase';
 
-declare global {
-    interface Window {
-        $3Dmol: any;
-    }
-}
+import * as $3Dmol from '3dmol';
 
 type FrameworkType = 'AEL' | 'AST' | 'MFI' | null;
 
@@ -44,17 +40,12 @@ const ZeoliteViewer: React.FC<ZeoliteViewerProps> = ({ frameworkType }) => {
             return;
         }
 
-        if (typeof (window as any).$3Dmol === 'undefined') {
-            setError("La librería de visualización 3D (3Dmol.js) no se pudo cargar. Comprueba tu conexión e inténtalo de nuevo.");
-            setIsLoading(false);
-            return;
-        }
 
         setIsLoading(true);
         setError(null);
 
-        let viewer = (window as any).$3Dmol.createViewer(viewerContainerRef.current, {
-            defaultcolors: (window as any).$3Dmol.elementColors.Jmol
+        let viewer = $3Dmol.createViewer(viewerContainerRef.current, {
+            defaultcolors: $3Dmol.elementColors.Jmol
         });
         viewerInstance.current = viewer;
 
@@ -118,7 +109,7 @@ const ZeoliteViewer: React.FC<ZeoliteViewerProps> = ({ frameworkType }) => {
                 probeRadius: 1.4 // Use a probe to detect pore surfaces
             };
             // Use Solvent Accessible Surface to visualize channels/cages, based on all atoms.
-            surfaceInstance.current = viewer.addSurface((window as any).$3Dmol.SurfaceType.SAS, surfaceOptions, {});
+            surfaceInstance.current = viewer.addSurface($3Dmol.SurfaceType.SAS, surfaceOptions, {});
         }
 
         if (sphereInstance.current) {

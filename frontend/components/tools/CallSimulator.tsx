@@ -7,6 +7,7 @@ import { useTranslations } from '../../contexts/LanguageContext';
 import { Accordion } from '../form/Accordion';
 import { FormInput, FormTextarea, FormSelect } from '../form/FormControls';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { pdfToText } from '../../services/pdf';
 
 interface CallSimulatorProps {
     onSaveTask: (task: Task, navigate?: boolean) => void;
@@ -74,17 +75,8 @@ export const CallSimulator: React.FC<CallSimulatorProps> = ({ onSaveTask, setVie
 
         try {
             if (file.type === 'application/pdf') {
-                if (typeof window.pdfjsLib === 'undefined' || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                    throw new Error("La librería PDF.js no se ha cargado correctamente.");
-                }
                 const arrayBuffer = await file.arrayBuffer();
-                const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                let fullText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    fullText += textContent.items.map((item: any) => item.str).join(' ');
-                }
+                const fullText = await pdfToText(arrayBuffer);
                 setCallDocument({ name: file.name, content: fullText });
             } else {
                  throw new Error('Formato de archivo no soportado. Por favor, sube un PDF.');

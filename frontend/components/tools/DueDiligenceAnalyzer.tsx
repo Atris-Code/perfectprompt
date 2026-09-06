@@ -4,6 +4,7 @@ import { FormInput, FormTextarea, FormSelect } from '../form/FormControls';
 import type { Task } from '../../types';
 import { ContentType, EventType } from '../../types';
 import { performDueDiligenceAnalysis } from '../../services/nexoService';
+import { pdfToText } from '../../services/pdf';
 
 const SECTIONS = [
     { id: 'deconstruction', title: 'Sección 1: Deconstrucción de la Propuesta Central', questions: ['¿Cuál es la propuesta de valor declarada?', '¿Cuáles son los activos/pasivos (tangibles e intangibles)?', '¿Qué validación de producto existe?', '¿Cuál es el plan de inversión y asignación presupuestaria propuesto?', '¿Qué estructura de retorno se ofrece?', '¿Cuáles son las debilidades no declaradas o supuestos implícitos (especialmente financieros/estratégicos)?'] },
@@ -56,16 +57,8 @@ export const DueDiligenceAnalyzer: React.FC<DueDiligenceAnalyzerProps> = ({ onSa
         let content = '';
         try {
             if (file.type === 'application/pdf') {
-                if (typeof window.pdfjsLib === 'undefined' || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                    throw new Error("La librería PDF.js no se ha cargado correctamente.");
-                }
                 const arrayBuffer = await file.arrayBuffer();
-                const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    content += textContent.items.map((item: any) => item.str).join(' ');
-                }
+                content = await pdfToText(arrayBuffer);
             } else if (file.type.startsWith('text/')) {
                 content = await file.text();
             } else {

@@ -33,15 +33,7 @@ import { useTranslations } from '../../contexts/LanguageContext';
 import { ContentType } from '../../types';
 import type { FormData, NarrativeConsistencyFeedback, TextualNarrativeCoherence, AgentSolution, GeoContextualData, MapClickPayload, Task, StyleDefinition, AudiovisualScene, SubTask } from '../../types';
 
-// FIX: Removed redundant global window declaration as it is now centralized in types.ts.
-/*
-declare global {
-  interface Window {
-    jspdf: any;
-    html2canvas: any;
-  }
-}
-*/
+
 
 const initialFormData: FormData = {
   objective: '',

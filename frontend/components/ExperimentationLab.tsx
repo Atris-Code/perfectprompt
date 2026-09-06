@@ -5,7 +5,8 @@ import { CLASSIFIED_VIDEO_PRESETS, ALL_VIDEO_PRESETS } from '../data/videoPreset
 import type { VideoPreset, DirectorAnalysis } from '../types';
 import { generateAcademyDemonstration } from '../services/nexoService';
 
-// FIX: Removed redundant global declarations for 'html2canvas' and 'window.jspdf' which are already centralized in types.ts.
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const IndexBadge: React.FC<{ index: number }> = ({ index }) => {
   const colorClasses = index > 0 ? 'bg-green-100 text-green-800 border-green-200'
@@ -99,18 +100,12 @@ export const ExperimentationLab: React.FC<ExperimentationLabProps> = ({ action, 
   
   const handleDownloadPDF = async () => {
     if (!analysisRef.current) return;
-    if (typeof (window as any).html2canvas === 'undefined' || typeof (window as any).jspdf === 'undefined') {
-        setError("Las librerías para generar PDF no se cargaron correctamente. Comprueba tu conexión a internet y refresca la página.");
-        return;
-    }
-    const { jsPDF } = window.jspdf;
     
     setIsDownloadingPDF(true);
     setError('');
 
     try {
-        // FIX: Use window.html2canvas as it's defined on the global window object.
-        const canvas = await window.html2canvas(analysisRef.current, {
+        const canvas = await html2canvas(analysisRef.current, {
             scale: 2, // Aumentar la escala para mejor resolución
             useCORS: true,
             backgroundColor: '#ffffff',
@@ -133,7 +128,7 @@ export const ExperimentationLab: React.FC<ExperimentationLabProps> = ({ action, 
         heightLeft -= pdfHeight;
         
         while (heightLeft > 0) {
-            position = -pdfHeight * (pdf.internal.getNumberOfPages());
+            position = -pdfHeight * (pdf.getNumberOfPages());
             pdf.addPage();
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledCanvasHeight);
             heightLeft -= pdfHeight;

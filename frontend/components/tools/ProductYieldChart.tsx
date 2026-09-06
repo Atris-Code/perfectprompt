@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-// Declare html2canvas to satisfy TypeScript since it's loaded via script tag
-declare const html2canvas: any;
+import html2canvas from 'html2canvas';
 
 interface YieldDataPoint {
   temperatura: number;
@@ -110,11 +109,6 @@ const ProductYieldChart: React.FC<ProductYieldChartProps> = ({ data, title }) =>
     
     const handleDownloadPNG = useCallback(async () => {
         if (!containerRef.current) return;
-        if (typeof html2canvas === 'undefined') {
-            console.error('html2canvas library not loaded. Cannot download PNG.');
-            alert("La librería para generar imágenes (html2canvas) no se pudo cargar. Comprueba tu conexión a internet y refresca la página.");
-            return;
-        }
         try {
             const canvas = await html2canvas(containerRef.current, {
                 backgroundColor: '#ffffff',
